@@ -15,12 +15,12 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "bootloader.h"
-#include "../Core/Inc/main.h"
-#include "stm32f4xx_hal_crc.h"
+#include "main.h"
 #include <string.h>  // debug
 #include <stdio.h>   // debug
 #include <inttypes.h>  // debug
 void print(const char* str);   // debug
+void k_delay(const uint32_t ms);
 
 /* Private defines -----------------------------------------------------------*/
 #define BOOTLOADER_VERSION_MAJOR 1 /*!< Major version */
@@ -90,6 +90,7 @@ uint8_t Bootloader_Init(void)
     if (APP_OFFSET == 0) return BL_ERASE_ERROR;   // start of boot program
     if (APP_first_sector == 0) return BL_ERASE_ERROR;   // application is within same sector as bootloader
 
+
     APP_sector_mask = 0;
     for (uint8_t i = APP_first_sector; i <= LAST_SECTOR; i++) {  // generate mask of sectors we do NOT want write protected
       APP_sector_mask |= 1 << i;
@@ -108,19 +109,16 @@ uint8_t Bootloader_Erase(void)
 {
     HAL_StatusTypeDef status = HAL_OK;
 
-    char msg[64];
-    
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGSERR );
     HAL_FLASH_Unlock();  
     for (uint32_t i =  APP_first_sector; i <= LAST_SECTOR; i++) {
-      sprintf(msg, "Erasing sector: %lu\n",i);
-      print(msg);                             
+      kprint(" Erasing sector: %d\n",(uint16_t)i);
       FLASH_Erase_Sector(i, VOLTAGE_RANGE_3);
       /* Toggle green LED during erasing */
       LED_G1_TG();
     }
-    
-    HAL_FLASH_Lock();                 
+
+    HAL_FLASH_Lock();
     return (status == HAL_OK) ? BL_OK : BL_ERASE_ERROR;
 }
 
@@ -154,7 +152,8 @@ uint8_t Bootloader_FlashBegin(void)
  */
 uint8_t Bootloader_FlashNext(uint64_t data)
 {
-    //char msg[64]; //debug
+    char msg[64]; //debug
+    uint64_t read_data;
     HAL_StatusTypeDef status = HAL_OK; //debug
     if(!(flash_ptr <= (FLASH_BASE + FLASH_SIZE - 8)) ||
        (flash_ptr < APP_ADDRESS))
@@ -163,26 +162,25 @@ uint8_t Bootloader_FlashNext(uint64_t data)
         return BL_WRITE_ERROR;
     }
 
-    char msg[64]; //debug
-    uint64_t read_data;
     status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, flash_ptr, data);
     if(status == HAL_OK)
     {
         /* Check the written value */
         read_data = *(uint64_t*)flash_ptr; 
-        if(read_data != data)            
+        if(read_data != data)
         {
             /* Flash content doesn't match source content */
-                HAL_FLASH_Lock();
-                print("Programming error\n");
-                sprintf(msg, "expected data (64 bit): %08lX %08lX\n", (uint32_t) (data >> 32) ,(uint32_t) data);
-                print(msg);   
-                sprintf(msg, "actual data (64 bit)  : %08lX %08lX\n", (uint32_t) (read_data >> 32) ,(uint32_t) read_data);
-                print(msg);   
-                sprintf(msg, "absolute address (byte): %08lX\n", flash_ptr);
-                print(msg);
-            
             HAL_FLASH_Lock();
+            kprint("Programming error\n");
+            sprintf(msg, "  expected data (64 bit): %08lX %08lX\n", (uint32_t) (data >> 32) ,(uint32_t) data);
+            kprint(msg);
+            sprintf(msg, "  actual data (64 bit)  : %08lX %08lX\n", (uint32_t) (read_data >> 32) ,(uint32_t) read_data);
+            kprint(msg);
+            sprintf(msg, "  absolute address (byte): %08lX\n", flash_ptr);
+            kprint(msg);
+                     
+            
+            
             return BL_WRITE_ERROR;
         }
         /* Increment Flash destination address */
@@ -274,6 +272,7 @@ uint8_t Bootloader_ConfigProtection(uint32_t protection)
     OBStruct.WRPSector = protection;            // select affected sectors
     OBStruct.WRPState = OB_WRPSTATE_DISABLE;    //  disable write protection
     status = HAL_FLASHEx_OBProgram(&OBStruct);  // write 
+
     if(status == HAL_OK)
     {
         /* Loading Flash Option Bytes - this generates a system reset. */    // apparently not on a STM32F407
@@ -342,13 +341,13 @@ uint8_t Bootloader_VerifyChecksum(void)
 
 /**
  * @brief  This function checks whether a valid application exists in flash.
- *         The check is performed by checking the very first DWORD (4 bytes) of
- *         the application firmware. In case of a valid application, this DWORD
+ *         The check is performed by checking the very first uint32_t (4 bytes) of
+ *         the application firmware. In case of a valid application, this uint32_t
  *         must represent the initialization location of stack pointer - which
  *         must be within the boundaries of RAM.
  * @return Bootloader error code ::eBootloaderErrorCodes
- * @retval BL_OK: if first DWORD represents a valid stack pointer location
- * @retval BL_NO_APP: first DWORD value is out of RAM boundaries
+ * @retval BL_OK: if first uint32_t represents a valid stack pointer location
+ * @retval BL_NO_APP: first uint32_t value is out of RAM boundaries
  */
 uint8_t Bootloader_CheckForApplication(void)
 {
@@ -369,6 +368,16 @@ void Bootloader_JumpToApplication(void)
 {
     uint32_t JumpAddress = *(__IO uint32_t*)(APP_ADDRESS + 4);
     pFunction Jump       = (pFunction)JumpAddress;
+    
+    //char msg[64];
+    //print("JumpToApplication\n");
+    //sprintf(msg, "PC  : %08lX\n", *(__IO uint32_t*)(APP_ADDRESS + 4));
+    //print(msg);
+    //sprintf(msg, "SP  : %08lX\n", *(__IO uint32_t*)APP_ADDRESS);
+    //print(msg);
+    //sprintf(msg, "VTOR: %08lX\n", APP_ADDRESS);
+    //print(msg);
+    //k_delay(500);
     
     HAL_RCC_DeInit();
     HAL_DeInit();
