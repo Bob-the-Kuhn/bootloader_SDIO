@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal.h"
+#include "stm32f1xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -46,7 +46,6 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
 
 /*** Application-Specific Configuration ***************************************/
 /* File name of application located on SD card */
@@ -122,12 +121,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define LED_D2_Pin GPIO_PIN_6
-#define LED_D2_GPIO_Port GPIOA
-#define LED_D3_Pin GPIO_PIN_7
-#define LED_D3_GPIO_Port GPIOA
-#define Detect_SDIO_Pin GPIO_PIN_9
-#define Detect_SDIO_GPIO_Port GPIOD
+#define D2_LED_G2_Pin GPIO_PIN_5
+#define D2_LED_G2_GPIO_Port GPIOE
+#define D4_LED_G2_Pin GPIO_PIN_5
+#define D4_LED_G2_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

@@ -1,7 +1,7 @@
 /* USER CODE BEGIN Header */
 /**
  ******************************************************************************
-  * @file    bsp_driver_sd.h for F4 (based on stm324x9i_eval_sd.h)
+  * @file    bsp_driver_sd.h for F1 (based on stm3210e_eval_sd.h)
   * @brief   This file contains the common defines and functions prototypes for
   *          the bsp_driver_sd.c driver.
   ******************************************************************************
@@ -18,16 +18,15 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F4_SD_H
-#define __STM32F4_SD_H
+#ifndef __STM32F1_SD_H
+#define __STM32F1_SD_H
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal.h"
-#include "fatfs_platform.h"
+#include "stm32f1xx_hal.h"
 
 /* Exported types --------------------------------------------------------*/
 /**
@@ -50,15 +49,7 @@
 
 #define SD_PRESENT               ((uint8_t)0x01)
 #define SD_NOT_PRESENT           ((uint8_t)0x00)
-
-
-#ifdef SDMMC_DATATIMEOUT    // don't let libraries inadvertently define SD_TIMEOUT value
-  #undef SDMMC_DATATIMEOUT
-#endif
-#ifdef SD_DATATIMEOUT
-  #undef SD_DATATIMEOUT
-#endif
-//#define SD_DATATIMEOUT           ((uint32_t)100000000)
+#define SD_DATATIMEOUT           ((uint32_t)100000000)
 
 #ifdef OLD_API
 /* kept to avoid issue when migrating old projects. */
@@ -96,4 +87,4 @@ void    BSP_SD_ReadCpltCallback(void);
 }
 #endif
 
-#endif /* __STM32F4_SD_H */
+#endif /* __STM32F1_SD_H */
