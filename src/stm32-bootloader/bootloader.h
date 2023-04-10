@@ -62,8 +62,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 /* Include the appropriate header file */
-#if defined(STM32F4)
-  #include "stm32f4xx.h"
+#if defined(STM32F1)
+  #include "stm32f1xx.h"
 #else
   #error "Target MCU header file is not defined or unsupported."
 #endif
