@@ -15,6 +15,7 @@
 
 #ifndef __BOOTLOADER_H
 #define __BOOTLOADER_H
+#include <stdint.h>
 
 /** Bootloader Configuration
  * @defgroup Bootloader_Configuration Bootloader Configuration
@@ -73,9 +74,9 @@
 #define APP_SIZE (uint32_t)(((END_ADDRESS - APP_ADDRESS) + 3) / 4)
 
 /** Number of sectors per bank in flash */
-uint32_t APP_first_sector;  // first FLASH sector an application can be loaded into
-uint32_t APP_first_addr;    // beginning address of first FLASH sector an application can be loaded into
-uint32_t APP_sector_mask;   // mask used to determine if any application sectors are write protected
+//uint32_t APP_first_sector;  // first FLASH sector an application can be loaded into
+//uint32_t APP_first_addr;    // beginning address of first FLASH sector an application can be loaded into
+//uint32_t APP_sector_mask;   // mask used to determine if any application sectors are write protected
 #define APP_OFFSET (APP_ADDRESS - FLASH_BASE)  // how far from start of FLASH the APP starts
 //#define FLASH_SIZE            ((uint32_t)0x100000)  // 1024K bytes
 //#define FLASH_SIZE            ((uint32_t)0x100000)  // 1024K bytes
@@ -86,15 +87,15 @@ uint32_t APP_sector_mask;   // mask used to determine if any application sectors
 #define FLASH_SECTOR_NBPERBANK  (1)
 #define FLASH_SECTOR_SIZE       ((uint32_t)0x4000)  // 16K bytes
 //#define FLASH_BASE            ((uint32_t)0x08000000) // FLASH(up to 1 MB) base address in the alias region
-//#define SRAM1_BASE            ((uint32_t)0x20000000) // SRAM1(112 KB) base address in the alias region
+#define SRAM1_BASE            ((uint32_t)0x20000000) // SRAM1(112 KB) base address in the alias region
 #define SRAM1_SIZE_MAX        ((uint32_t)0x1BFFF)
 //#define SRAM2_BASE            ((uint32_t)0x2001C000) // SRAM2(16 KB) base address in the alias region  
 #define SRAM2_SIZE_MAX        ((uint32_t)0x03FFF)
 //#define PERIPH_BASE           ((uint32_t)0x40000000) // Peripheral base address in the alias region    
 
-#define FLASH_FLAG_ALL_ERRORS     (FLASH_FLAG_OPERR   | FLASH_FLAG_WRPERR | \
-                                   FLASH_FLAG_PGAERR  | FLASH_FLAG_PGSERR | \
-                                   FLASH_FLAG_PGPERR )
+//#define FLASH_FLAG_ALL_ERRORS     (FLASH_FLAG_OPERR   | FLASH_FLAG_WRPERR | \
+//                                   FLASH_FLAG_PGAERR  | FLASH_FLAG_PGSERR | \
+//                                   FLASH_FLAG_PGPERR )
 
 /* MCU RAM information (to check whether flash contains valid application) */
 #define RAM_BASE SRAM1_BASE     /*!< Start address of RAM */

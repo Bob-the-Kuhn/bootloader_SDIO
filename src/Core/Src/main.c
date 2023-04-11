@@ -28,6 +28,7 @@
 #include "bootloader.h"
 #include "ffconf.h"
 #include <ctype.h>
+#include <stdint.h>
 
 /* USER CODE END Includes */
 
