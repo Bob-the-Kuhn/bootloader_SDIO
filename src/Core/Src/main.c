@@ -460,7 +460,7 @@ uint8_t Enter_Bootloader(void)
   /* Step 2: Erase Flash */
   print("Erasing flash...\n");
   LED_G2_ON();
-//  Bootloader_Erase();
+  Bootloader_Erase();
   LED_G2_OFF();
   print("Flash erase finished.\n");
   
@@ -479,46 +479,44 @@ uint8_t Enter_Bootloader(void)
   print("Starting programming...\n");
   LED_G2_ON();
   cntr = 0;
-//  Bootloader_FlashBegin();
-//  do
-//  {
-//    data = 0xFFFFFFFFFFFFFFFF;
-//    //      fr   = f_read(&SDFile, &data, 8, &num);
-//    fr   = f_read(&SDFile, &data, 4, &num);
-//    if(num)
-//    {
-//      status = Bootloader_FlashNext(data);
-//      if(status == BL_OK)
-//      {
-//        cntr++;
-//      }
-//      else
-//      {
-//        //                sprintf(msg, "Programming error at: %lu byte\n", (cntr * 8));
-//        sprintf(msg, "Programming error at: %lu byte\n", (cntr * 4));
-//        print(msg);
-//        
-//        f_close(&SDFile);
-//        SD_Eject();
-//        print("SD ejected.\n");
-//        
-//        LED_ALL_OFF();
-//        return ERR_FLASH;
-//      }
-//    }
-//    if(cntr % 256 == 0)
-//    {
-//      /* Toggle green LED during programming */
-//      LED_G1_TG();
-//    }
-//  } while((fr == FR_OK) && (num > 0));
-//  
-//  /* Step 4: Finalize Programming */
-//  Bootloader_FlashEnd();
+  Bootloader_FlashBegin();
+  do
+  {
+    data = 0xFFFFFFFFFFFFFFFF;
+    fr   = f_read(&SDFile, &data, 8, &num);
+    if(num)
+    {
+      status = Bootloader_FlashNext(data);
+      if(status == BL_OK)
+      {
+        cntr++;
+      }
+      else
+      {
+        sprintf(msg, "Programming error at: %lu byte (%08lX)\n", (cntr * 8), (cntr * 8));
+        print(msg);
+        
+        f_close(&SDFile);
+        SD_Eject();
+        print("SD ejected.\n");
+        
+        LED_ALL_OFF();
+        return ERR_FLASH;
+      }
+    }
+    if(cntr % 256 == 0)
+    {
+      /* Toggle green LED during programming */
+      LED_G1_TG();
+    }
+  } while((fr == FR_OK) && (num > 0));
+  
+  /* Step 4: Finalize Programming */
+  Bootloader_FlashEnd();
   f_close(&SDFile);
   LED_ALL_OFF();
   print("Programming finished.\n");
-  sprintf(msg, "Flashed: %lu bytes.\n", (cntr * 4));
+  sprintf(msg, "Flashed: %lu bytes.\n", (cntr * 8));
   print(msg);
   
   /* Open file for verification */
@@ -539,37 +537,37 @@ uint8_t Enter_Bootloader(void)
   print("Verifying ...\n");
   addr = APP_ADDRESS;
   cntr = 0;
-//  do
-//  {
-//    data = 0xFFFFFFFFFFFFFFFF;
-//    fr   = f_read(&SDFile, &data, 4, &num);
-//    if(num)
-//    {
-//      if(*(uint32_t*)addr == (uint32_t)data)
-//      {
-//        addr += 4;
-//        cntr++;
-//      }
-//      else
-//      {
-//        sprintf(msg, "Verification error at: %lu byte.\n", (cntr * 4));
-//        print(msg);
-//        
-//        f_close(&SDFile);
-//        SD_Eject();
-//        print("SD ejected.\n");
-//        
-//        LED_G1_OFF();
-//        return ERR_VERIFY;
-//      }
-//    }
-//    if(cntr % 256 == 0)
-//    {
-//      /* Toggle green LED during verification */
-//      LED_G1_TG();
-//    }
-//  } while((fr == FR_OK) && (num > 0));
-//  f_close(&SDFile);
+  do
+  {
+    data = 0xFFFFFFFFFFFFFFFF;
+    fr   = f_read(&SDFile, &data, 8, &num);
+    if(num)
+    {
+      if(*(uint32_t*)addr == (uint32_t)data)
+      {
+        addr += 8;
+        cntr++;
+      }
+      else
+      {
+        sprintf(msg, "Verification error at: %lu byte (%08lX)\n", (cntr * 8), (cntr * 8));
+        print(msg);
+        
+        f_close(&SDFile);
+        SD_Eject();
+        print("SD ejected.\n");
+        
+        LED_G1_OFF();
+        return ERR_VERIFY;
+      }
+    }
+    if(cntr % 256 == 0)
+    {
+      /* Toggle green LED during verification */
+      LED_G1_TG();
+    }
+  } while((fr == FR_OK) && (num > 0));
+  f_close(&SDFile);
   print("Verification passed.\n");
   LED_G1_OFF();
   

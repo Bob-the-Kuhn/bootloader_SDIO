@@ -62,12 +62,12 @@ extern "C" {
 //#define WORK_LED_GPIO_Port GPIOB
 
 /* LD2 */
-#define LED_G1_Port GPIOA
-#define LED_G1_Pin  GPIO_PIN_6
+#define LED_G1_Port D2_LED_G2_GPIO_Port
+#define LED_G1_Pin  D2_LED_G2_Pin
 
 /* LD3 */
-#define LED_G2_Port GPIOA
-#define LED_G2_Pin  GPIO_PIN_7
+#define LED_G2_Port D4_LED_G2_GPIO_Port
+#define LED_G2_Pin  D4_LED_G2_Pin
 
 /* Enumerations --------------------------------------------------------------*/
 /* Error codes */
