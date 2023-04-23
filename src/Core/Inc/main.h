@@ -123,6 +123,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define D2_LED_G2_Pin GPIO_PIN_5
 #define D2_LED_G2_GPIO_Port GPIOE
+#define Detect_SDIO_Pin GPIO_PIN_1
+#define Detect_SDIO_GPIO_Port GPIOC
 #define D4_LED_G2_Pin GPIO_PIN_5
 #define D4_LED_G2_GPIO_Port GPIOB
 

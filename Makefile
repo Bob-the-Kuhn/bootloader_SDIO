@@ -14,7 +14,8 @@ ELF = firmware.elf
 BIN = firmware.bin
 
 # Cross compiling configuration
-CROSS_COMPILE = arm-none-eabi-
+#CROSS_COMPILE = arm-none-eabi-
+CROSS_COMPILE = C:/install_software/arm-gnu-toolchain-12.2.mpacbti-rel1-mingw-w64-i686-arm-none-eabi/bin/arm-none-eabi-
 CC			  = $(CROSS_COMPILE)gcc
 AR			  = $(CROSS_COMPILE)ar
 AS			  = $(CROSS_COMPILE)as
@@ -23,7 +24,7 @@ OBJCOPY		 = $(CROSS_COMPILE)objcopy
 STRIP		   = $(CROSS_COMPILE)strip
 
 #CFLAGS += -mthumb -Wall -Werror -O0 -mcpu=cortex-m3 -ggdb -g3
-CFLAGS += -mthumb -Wall -mcpu=cortex-m3 -fmax-errors=5 -DMCU_STM32F103ZE -DSTM32F1 -O0 -ggdb -g3
+CFLAGS += -mthumb -Wall -mcpu=cortex-m3 -fmax-errors=5 -DMCU_STM32F103ZE -DSTM32F1 -O0 -ggdb -g3 -lgcc
 
 
 INCFLAGS += -Isrc/Core/Inc

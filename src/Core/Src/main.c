@@ -71,7 +71,7 @@ void SD_Eject(void) {};
 void UART1_Init(void);
 void UART1_DeInit(void);
 void Error_Handler(void);
-void print(const char* str);   // debug                                      
+void print(const char* str);   // debug   
 
 #define PGM_READ_WORD(x) *(x)
 
@@ -96,6 +96,7 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+  __disable_irq();
 
   /* USER CODE BEGIN Init */
 
@@ -280,6 +281,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(D2_LED_G2_GPIO_Port, &GPIO_InitStruct);
+
+                                           
+                                        
+                                         
+                                     
+                                                         
 
   /*Configure GPIO pin : D4_LED_G2_Pin */
   GPIO_InitStruct.Pin = D4_LED_G2_Pin;
