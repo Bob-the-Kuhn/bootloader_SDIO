@@ -391,7 +391,7 @@ uint8_t Enter_Bootloader(void)
   uint32_t cntr;
   uint32_t addr;
   //char SDPath[4] = {0x00};   /* SD logical drive path */                                           
-  char msg[40] = {0x00};
+  char msg[64] = {0x00};
   
   /* Mount SD card */
   fr = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);

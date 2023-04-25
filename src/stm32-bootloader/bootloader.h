@@ -94,11 +94,6 @@
 //#define SRAM2_SIZE_MAX        ((uint32_t)0x03FFF)
 //#define PERIPH_BASE           ((uint32_t)0x40000000) // Peripheral base address in the alias region    
 
-//#define FLASH_FLAG_ALL_ERRORS     (FLASH_FLAG_OPERR   | FLASH_FLAG_WRPERR | \
-//                                   FLASH_FLAG_PGAERR  | FLASH_FLAG_PGSERR | \
-//                                   FLASH_FLAG_PGPERR )
-
-
 
 #if defined(FLASH_BANK2_END)
   #define FLASH_FLAG_ALL_ERRORS   (FLASH_FLAG_BSY          | FLASH_FLAG_PGERR       | \
