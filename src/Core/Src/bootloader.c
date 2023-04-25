@@ -37,6 +37,7 @@ typedef void (*pFunction)(void); /*!< Function pointer definition */
 static uint32_t flash_ptr = APP_ADDRESS;
 uint16_t APP_first_sector = 0;
 uint32_t APP_first_addr = 0;
+uint32_t WRITE_protection = 0xFFFFFFFF;  // default to removing write protection from all pages 
 
 /**
  * @brief  This function initializes bootloader and flash.
@@ -45,26 +46,6 @@ uint32_t APP_first_addr = 0;
  */
 uint8_t Bootloader_Init(void)
 {
-//    extern uint32_t _siccmram[];
-//    // Read and use the `_siccmram` linkerscript variable
-//    uint32_t siccmram = (uint32_t)_siccmram;
-//    #define BOOT_LOADER_END siccmram
- 
-//    extern uint32_t _edata[];
-//    // Read and use the `_edata` linkerscript variable
-//    uint32_t boot_loader_end = (uint32_t)_edata;
-//    #define BOOT_LOADER_END boot_loader_end 
-    
-//    extern uint32_t _siccmram[];  // not quite end of FLASH
-//    // Read and use the `_siccmram` linkerscript variable
-//    uint32_t boot_loader_end = (uint32_t)_siccmram;
-//    #define BOOT_LOADER_END boot_loader_end 
-
-//    extern uint32_t _flash_end[];
-//    // Read and use the `_flash_end` linkerscript variable
-//    uint32_t boot_loader_end = (uint32_t)_flash_end + 128;  //  just a few more constants after _flash_end
-//    #define BOOT_LOADER_END boot_loader_end 
-    
     extern uint32_t _sidata[];  // end of program, start of data to be copied to RAM
     extern uint32_t _sdata[];   // start of RAM area for data
     extern uint32_t _edata[];   // end of RAM area for data
@@ -77,13 +58,26 @@ uint8_t Bootloader_Init(void)
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);
     HAL_FLASH_Lock();
 
-    // STM32F103ZE has 512 sectors of 2K bytes each
+    // STM32F103ZE has 256 pages of 2K bytes each
+    // pages 0-61 are write protected as pairs
+    // pages 62-251 are protected as a block
     
+    // The protection is not affected if a page pair/block only has the bootloader in it.
+    // The protection is cleared if a page pair/block has only the application space in it
+    // The protection is cleared if a paige pair/block has both the bootloader the application space in it
+ 
+    
+    uint32_t mask = 1;  // mask for clearing write protect bits
     for (uint16_t counter = 1; counter < FLASH_SIZE/FLASH_SECTOR_SIZE; counter++) {   // find 
+      if (!(counter % 2) && (counter <= 62)) mask = mask << 1; // move mask to left every 2 pages until past 62
       APP_first_addr = ((counter * FLASH_SECTOR_SIZE) + FLASH_BASE);
       if (BOOT_LOADER_END <= APP_first_addr) {
-        APP_first_sector = counter;  
+        APP_first_sector = counter; 
+        WRITE_protection |= mask;   // remove write protection on this page pair 
         break;
+      }
+      else {
+        WRITE_protection &= ~mask;  // don't touch write protection on pages with bootloader in it
       }
     }
      
@@ -92,6 +86,8 @@ uint8_t Bootloader_Init(void)
     print(msg);
     sprintf(msg, "Lowest possible APP_ADDRESS is %08lX\n", APP_first_addr);
     print(msg);
+    sprintf(msg, "WRITE_protection mask: %08lX\n", WRITE_protection);
+    print(msg);   
     /* check APP_ADDRESS */
     if (APP_ADDRESS & 0x1ff) {
       print("ERROR - application address not on 512 byte boundary\n");
@@ -105,11 +101,6 @@ uint8_t Bootloader_Init(void)
     if (APP_OFFSET == 0) return BL_ERASE_ERROR;   // start of boot program
     if (APP_first_sector == 0) return BL_ERASE_ERROR;   // application is within same sector as bootloader
 
-//    APP_sector_mask = 0;
-//    for (uint16_t i = APP_first_sector; i < FLASH_SIZE/FLASH_SECTOR_SIZE; i++) {  // generate mask of sectors we do NOT want write protected
-//      APP_sector_mask |= 1 << i;
-//    }
-    
     return BL_OK;
 }
 
@@ -121,17 +112,14 @@ uint8_t Bootloader_Init(void)
  */
 uint8_t Bootloader_Erase(void)
 {
-    HAL_StatusTypeDef status = HAL_OK;
     char msg[64];
     uint32_t PageError;
     FLASH_EraseInitTypeDef pEraseInit;
     pEraseInit.TypeErase = FLASH_TYPEERASE_PAGES;  // erase pages mode
     pEraseInit.Banks = 0;                          // don't care in erase pages mode    
 //    pEraseInit.PageAddress = APP_first_addr;       // address within first page to erase
-//    pEraseInit.PageAddress = APP_first_sector * FLASH_SECTOR_SIZE;       // address within first page to erase
-//    pEraseInit.PageAddress = 0x08008010;       // address within first page to erase
 //    pEraseInit.NbPages =  FLASH_SIZE/FLASH_SECTOR_SIZE - APP_first_sector + 1;
-//    pEraseInit.NbPages =  5;
+;
     __disable_irq();
     HAL_FLASH_Unlock();  
     
@@ -246,23 +234,14 @@ uint8_t Bootloader_FlashEnd(void)
  */
 uint32_t Bootloader_GetProtectionStatus(void)
   {
-//    FLASH_OBProgramInitTypeDef OBStruct = {0};
-//    uint32_t protection                  = BL_PROTECTION_NONE;
-//
-//    HAL_FLASH_Unlock();
-//
-//    HAL_FLASHEx_OBGetConfig(&OBStruct);
-//    return OBStruct.WRPSector;
-//
-//    /* RDP */
-//    if(OBStruct.RDPLevel != OB_RDP_LEVEL_0)
-//    {
-//        protection |= BL_PROTECTION_RDP;
-//    }
-//
-//    HAL_FLASH_Lock();
-//    return protection;
-}
+    FLASH_OBProgramInitTypeDef OBStruct = {0};
+
+    HAL_FLASH_Unlock();
+
+    HAL_FLASHEx_OBGetConfig(&OBStruct);
+    HAL_FLASH_Lock();
+    return OBStruct.WRPPage;  // 1 means NOT write protected
+  }
 
 // debug helper routine
 const char *byte_to_binary (uint32_t x)
@@ -279,7 +258,6 @@ const char *byte_to_binary (uint32_t x)
     return b;
 }
 
-
 /**
  * @brief  This function configures the write protection of flash.
  * @param  protection: protection type ::eFlashProtectionTypes
@@ -287,29 +265,30 @@ const char *byte_to_binary (uint32_t x)
  * @retval BL_OK: upon success
  * @retval BL_OBP_ERROR: upon failure
  */
-uint8_t Bootloader_ConfigProtection(uint32_t protection)
+uint8_t Bootloader_ConfigProtection(uint32_t protection, uint8_t set)
 {
-//    FLASH_OBProgramInitTypeDef OBStruct = {0};
-//    HAL_StatusTypeDef status            = HAL_ERROR;
-//
-//    status = HAL_FLASH_Unlock();
-//    status |= HAL_FLASH_OB_Unlock();
-//    
-//    HAL_FLASHEx_OBGetConfig(&OBStruct);  // get current FLASH config
-//    
-//    OBStruct.WRPSector = protection;            // select affected sectors
-//    OBStruct.WRPState = OB_WRPSTATE_DISABLE;    //  disable write protection
-//    status = HAL_FLASHEx_OBProgram(&OBStruct);  // write 
-//    if(status == HAL_OK)
-//    {
-//        /* Loading Flash Option Bytes - this generates a system reset. */    // apparently not on a STM32F407
-//        status |= HAL_FLASH_OB_Launch();
-//    }
-//
-//    status |= HAL_FLASH_OB_Lock();
-//    status |= HAL_FLASH_Lock();
-//
-//    return (status == HAL_OK) ? BL_OK : BL_OBP_ERROR;
+    FLASH_OBProgramInitTypeDef OBStruct = {0};
+    HAL_StatusTypeDef status            = HAL_ERROR;
+
+    status = HAL_FLASH_Unlock();
+    status |= HAL_FLASH_OB_Unlock();
+    
+    HAL_FLASHEx_OBGetConfig(&OBStruct);  // get current FLASH config
+    
+    OBStruct.OptionType = OPTIONBYTE_WRP;       // program write protection mode
+    OBStruct.WRPPage = protection;            // select affected sectors
+    OBStruct.WRPState = set ? OB_WRPSTATE_ENABLE : OB_WRPSTATE_DISABLE;    //  set/clear write protection
+    status = HAL_FLASHEx_OBProgram(&OBStruct);  // write 
+    if(status == HAL_OK)
+    {
+        /* Loading Flash Option Bytes - this generates a system reset. */    // apparently not on a STM32F407
+        HAL_FLASH_OB_Launch();
+    }
+
+    status |= HAL_FLASH_OB_Lock();
+    status |= HAL_FLASH_Lock();
+
+    return (status == HAL_OK) ? BL_OK : BL_OBP_ERROR;
 }
 
 /**

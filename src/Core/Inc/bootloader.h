@@ -48,7 +48,7 @@
 
 /** Start address of application space in flash */
 //#define APP_ADDRESS (uint32_t)0x08008000
-#define APP_ADDRESS (uint32_t)0x08009000
+#define APP_ADDRESS (uint32_t)0x0800A000
 //#define APP_ADDRESS (uint32_t)0x08020000  // first available for EXFAT
 /** End address of application space (address of last byte) */
 #define END_ADDRESS (uint32_t)0x080FFFFB
@@ -135,15 +135,6 @@ enum eBootloaderErrorCodes
     BL_OBP_ERROR    /*!< Flash option bytes programming error */
 };
 
-/** Flash Protection Types */
-enum eFlashProtectionTypes
-{
-    BL_PROTECTION_NONE  = 0,   /*!< No flash protection */
-    BL_PROTECTION_WRP   = 0x1, /*!< Flash write protection */
-    BL_PROTECTION_RDP   = 0x2, /*!< Flash read protection */
-    BL_PROTECTION_PCROP = 0x4, /*!< Flash propietary code readout protection */
-};
-
 /* Functions -----------------------------------------------------------------*/
 uint8_t Bootloader_Init(void);
 uint8_t Bootloader_Erase(void);
@@ -153,7 +144,7 @@ uint8_t Bootloader_FlashNext(uint64_t data);
 uint8_t Bootloader_FlashEnd(void);
 
 uint32_t Bootloader_GetProtectionStatus(void);
-uint8_t Bootloader_ConfigProtection(uint32_t protection);
+uint8_t Bootloader_ConfigProtection(uint32_t protection, uint8_t set);
 
 uint8_t Bootloader_CheckSize(uint32_t appsize);
 uint8_t Bootloader_VerifyChecksum(void);
@@ -162,5 +153,9 @@ void Bootloader_JumpToApplication(void);
 void Bootloader_JumpToSysMem(void);
 
 uint32_t Bootloader_GetVersion(void);
+extern uint32_t WRITE_protection;
+
+#define SET 1
+#define CLEAR 0
 
 #endif /* __BOOTLOADER_H */

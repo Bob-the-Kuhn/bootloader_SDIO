@@ -294,7 +294,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(D4_LED_G2_GPIO_Port, &GPIO_InitStruct);
-
+  
+  
+  
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
@@ -431,31 +433,39 @@ uint8_t Enter_Bootloader(void)
   print("App size OK.\n");
   
   /* Step 1: Init Bootloader and Flash */
-  
+
   /* Check for flash write protection of application area*/
-//  if(~Bootloader_GetProtectionStatus() & APP_sector_mask) {
-//    print("Application space in flash is write protected.\n");
-//    //        print("Press button to disable flash write protection...\n");
-//    //        LED_ALL_ON();
-//    //        for(i = 0; i < 100; ++i)
-//    //        {
-//    //            LED_ALL_TG();
-//    //            HAL_Delay(50);
-//    //            if(IS_BTN_PRESSED())
-//    //            {
-//    //                print("Disabling write protection and generating system "
-//    //                      "reset...\n");
-//    //                Bootloader_ConfigProtection(BL_PROTECTION_NONE);
-//    //            }
-//    //        }
-//    //        LED_ALL_OFF();
-//    //        print("Button was not pressed, write protection is still active.\n");
-//    //        print("Disabling write protection and generating system reset...\n");  // apparently not on a STM32F107
-//    Bootloader_ConfigProtection(APP_sector_mask);
-//    //        print("Exiting Bootloader.\n");
-//    print("write protection removed\n");
-//    //        return ERR_WRP_ACTIVE;
-//  }
+  if(~Bootloader_GetProtectionStatus() & WRITE_protection) {
+    print("Application space in flash is write protected.\n");
+
+    //        print("Press button to disable flash write protection...\n");
+    //        LED_ALL_ON();
+    //        for(i = 0; i < 100; ++i)
+    //        {
+    //            LED_ALL_TG();
+    //            HAL_Delay(50);
+    //            if(IS_BTN_PRESSED())
+    //            {
+    //                print("Disabling write protection and generating system "
+    //                      "reset...\n");
+    //                Bootloader_ConfigProtection(BL_PROTECTION_NONE);
+    //            }
+    //        }
+    //        LED_ALL_OFF();
+    //        print("Button was not pressed, write protection is still active.\n");
+    print("Disabling write protection and generating system reset...\n"); 
+    print("  May require power cycle to recover.\n");
+    if (Bootloader_ConfigProtection(WRITE_protection, CLEAR) != BL_OK)
+      {
+        print("Failed to clear write protection.\n");
+        print("Exiting Bootloader.\n");
+        return ERR_OK;
+      }
+  
+    //        print("Exiting Bootloader.\n");
+    print("write protection removed\n");
+    //        return ERR_WRP_ACTIVE;
+  }
   
   /* Step 2: Erase Flash */
   print("Erasing flash...\n");
@@ -557,14 +567,14 @@ uint8_t Enter_Bootloader(void)
         SD_Eject();
         print("SD ejected.\n");
         
-        LED_G1_OFF();
+        LED_ALL_OFF();
         return ERR_VERIFY;
       }
     }
     if(cntr % 256 == 0)
     {
       /* Toggle green LED during verification */
-      LED_G1_TG();
+      LED_G2_TG();
     }
   } while((fr == FR_OK) && (num > 0));
   f_close(&SDFile);
@@ -600,10 +610,10 @@ uint8_t Enter_Bootloader(void)
   SD_Eject();
   print("SD ejected.\n");
   
-  /* Enable flash write protection */
+  /* Enable flash write protection on application area */
   #if(USE_WRITE_PROTECTION)
     print("Enabling flash write protection and generating system reset...\n");
-    if(Bootloader_ConfigProtection(BL_PROTECTION_WRP) != BL_OK)
+    if(Bootloader_ConfigProtection(WRITE_protection, SET)) != BL_OK)
     {
       print("Failed to enable write protection.\n");
       print("Exiting Bootloader.\n");
