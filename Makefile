@@ -2,7 +2,6 @@
 # MIT License
 
 # Windows delete and copy commands are strange
-RM = find -iname '*.o' -delete
 CP = copy /Y
 
 BIGOBJ = firmware.o
@@ -36,13 +35,27 @@ INCFLAGS += -Isrc/Drivers/STM32F1xx_HAL_Driver/Src
 INCFLAGS += -Isrc/FATFS/App
 INCFLAGS += -Isrc/FATFS/Target
 INCFLAGS += -Isrc/Middlewares/Third_Party/FatFs/src
-INCFLAGS += -Isrc/Middlewares/Third_Party/FatFs/src/drivers
 INCFLAGS += -Isrc/Middlewares/Third_Party/FatFs/src/option
-INCFLAGS += -Isrc/Middlewares/Third_Party/FatFs/src/drivers/
 INCFLAGS += -Isrc/stm32-bootloader
+
+DEL_DIR += src/Core/Inc
+DEL_DIR += src/Core/Src
+DEL_DIR += src/Core/Startup
+DEL_DIR += src/Drivers/CMSIS/Device
+DEL_DIR += src/Drivers/CMSIS/Device/ST/STM32F1xx/Include
+DEL_DIR += src/Drivers/CMSIS/Device/ST/STM32F1xx/Source
+DEL_DIR += src/Drivers/CMSIS/Include
+DEL_DIR += src/Drivers/STM32F1xx_HAL_Driver/Inc
+DEL_DIR += src/Drivers/STM32F1xx_HAL_Driver/Inc/Legacy
+DEL_DIR += src/Drivers/STM32F1xx_HAL_Driver/Src
+DEL_DIR += src/FATFS/App
+DEL_DIR += src/FATFS/Target
+DEL_DIR += src/Middlewares/Third_Party/FatFs/src
+DEL_DIR += src/Middlewares/Third_Party/FatFs/src/option
+DEL_DIR += src/stm32-bootloader
 	
-#OBJS += src/Core/Startup/startup_stm32f103zetx.o
-OBJS += src/Core/Startup/startup_stm32f103xe.o
+OBJS += src/Core/Startup/startup_stm32f103zetx.o
+#OBJS += src/Core/Startup/startup_stm32f103xe.o
 OBJS += src/Core/Src/main.o
 OBJS += src/Core/Src/stm32f1xx_hal_msp.o
 OBJS += src/Core/Src/stm32f1xx_it.o
@@ -59,6 +72,7 @@ OBJS += src/Middlewares/Third_Party/FatFs/src/ff.o
 OBJS += src/Middlewares/Third_Party/FatFs/src/ff_gen_drv.o
 OBJS += src/Middlewares/Third_Party/FatFs/src/option/syscall.o
 OBJS += src/stm32-bootloader/bootloader.o
+OBJS += src/stm32-bootloader/main_boot.o
 OBJS += src/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
 OBJS += src/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.o
 OBJS += src/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_dma.o
@@ -99,8 +113,10 @@ $(BIN): $(ELF)
 	$(OBJCOPY) -O binary $(ELF) $(BIN)
 
 clean:
-	-$(RM)  
-
+	find $(DEL_DIR) -iname  "*.o" -delete
+	find -iname  "firmware.a" -delete
+	find -iname  "firmware.o" -delete
+  
 flash: $(BIN)
 	st-flash write $(BIN) 0x8000000
 

@@ -16,6 +16,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "bootloader.h"
 #include "main.h"
+#include "main_boot.h"
 #if(USE_CHECKSUM)
   #include "stm32f4xx_hal_crc.h"
 #endif
@@ -91,11 +92,11 @@ uint8_t Bootloader_Init(void)
     /* check APP_ADDRESS */
     if (APP_ADDRESS & 0x1ff) {
       print("ERROR - application address not on 512 byte boundary\n");
-      Error_Handler();
+      Error_Handler_Boot();
     }
     if (APP_ADDRESS < APP_first_addr) {
       print("ERROR - application address within same sector as boot loader\n");
-      Error_Handler();
+      Error_Handler_Boot();
     } 
     
     if (APP_OFFSET == 0) return BL_ERASE_ERROR;   // start of boot program
