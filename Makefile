@@ -2,11 +2,8 @@
 # MIT License
 
 # Windows delete and copy commands are strange
-RM = del /Q /F
+RM = find -iname '*.o' -delete
 CP = copy /Y
-#RM = rm -rf
-#CP = cp -f
-
 
 BIGOBJ = firmware.o
 LIB = firmware.a
@@ -15,7 +12,7 @@ BIN = firmware.bin
 
 # Cross compiling configuration
 #CROSS_COMPILE = arm-none-eabi-
-CROSS_COMPILE = C:/install_software/arm-gnu-toolchain-12.2.mpacbti-rel1-mingw-w64-i686-arm-none-eabi/bin/arm-none-eabi-
+CROSS_COMPILE = C:/ST/STM32CubeIDE_1.10.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.10.3-2021.10.win32_1.0.100.202210260954/tools/bin/arm-none-eabi-
 CC			  = $(CROSS_COMPILE)gcc
 AR			  = $(CROSS_COMPILE)ar
 AS			  = $(CROSS_COMPILE)as
@@ -23,9 +20,8 @@ LD			  = $(CROSS_COMPILE)ld
 OBJCOPY		 = $(CROSS_COMPILE)objcopy
 STRIP		   = $(CROSS_COMPILE)strip
 
-#CFLAGS += -mthumb -Wall -Werror -O0 -mcpu=cortex-m3 -ggdb -g3
 CFLAGS += -mthumb -Wall -mcpu=cortex-m3 -fmax-errors=5 -DMCU_STM32F103ZE -DSTM32F1 -O0 -ggdb -g3 -lgcc
-
+AFLAGS += -mthumb -Wall -mcpu=cortex-m3 -ggdb -g3
 
 INCFLAGS += -Isrc/Core/Inc
 INCFLAGS += -Isrc/Core/Src
@@ -42,9 +38,11 @@ INCFLAGS += -Isrc/FATFS/Target
 INCFLAGS += -Isrc/Middlewares/Third_Party/FatFs/src
 INCFLAGS += -Isrc/Middlewares/Third_Party/FatFs/src/drivers
 INCFLAGS += -Isrc/Middlewares/Third_Party/FatFs/src/option
+INCFLAGS += -Isrc/Middlewares/Third_Party/FatFs/src/drivers/
 INCFLAGS += -Isrc/stm32-bootloader
 	
-OBJS += src/Core/Startup/startup_stm32f103zetx.o
+#OBJS += src/Core/Startup/startup_stm32f103zetx.o
+OBJS += src/Core/Startup/startup_stm32f103xe.o
 OBJS += src/Core/Src/main.o
 OBJS += src/Core/Src/stm32f1xx_hal_msp.o
 OBJS += src/Core/Src/stm32f1xx_it.o
@@ -53,8 +51,10 @@ OBJS += src/Core/Src/sysmem.o
 OBJS += src/Core/Src/system_stm32f1xx.o
 OBJS += src/FATFS/App/fatfs.o
 OBJS += src/FATFS/Target/bsp_driver_sd.o
+OBJS += src/FATFS/Target/fatfs_platform.o
+OBJS += src/FATFS/Target/sd_diskio.o
 OBJS += src/Middlewares/Third_Party/FatFs/src/diskio.o
-OBJS += src/Middlewares/Third_Party/FatFs/src/drivers/sd_diskio.o
+#OBJS += src/Middlewares/Third_Party/FatFs/src/drivers/sd_diskio.o
 OBJS += src/Middlewares/Third_Party/FatFs/src/ff.o
 OBJS += src/Middlewares/Third_Party/FatFs/src/ff_gen_drv.o
 OBJS += src/Middlewares/Third_Party/FatFs/src/option/syscall.o
@@ -74,9 +74,6 @@ OBJS += src/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_sd.o
 OBJS += src/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.o
 OBJS += src/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_ll_sdmmc.o
 
-#all:
-#	gcc -c src/Core/Src/main.c $(INCFLAGS) -o src/Core/Src/main.o
-
 all: $(BIN)
 
 %.o: %.c
@@ -85,6 +82,9 @@ all: $(BIN)
   
 %.o: %.a
 	$(AS) -a $(CFLAGS) $(INCFLAGS) -o $@ $<
+  
+%.o: %.s
+	$(AS) -a $(AFLAGS) $(INCFLAGS) -o $@ $<
 
 $(BIGOBJ): $(OBJS)
 	$(CC) $(OBJS) -r -o $(BIGOBJ)
@@ -99,7 +99,7 @@ $(BIN): $(ELF)
 	$(OBJCOPY) -O binary $(ELF) $(BIN)
 
 clean:
-	-$(RM) *.o  
+	-$(RM)  
 
 flash: $(BIN)
 	st-flash write $(BIN) 0x8000000

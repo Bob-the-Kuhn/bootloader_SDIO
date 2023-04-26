@@ -81,8 +81,8 @@
 //#define FLASH_SIZE            ((uint32_t)0x100000)  // 1024K bytes
 #define FLASH_SIZE            ((uint32_t)0x80000)  // 512K bytes
 //#define FLASH_SIZE            ((uint32_t)0x40000)  // 256K bytes
-//#define LAST_SECTOR           11  // 1024K bytes STM32F107 has FLASH sectors 0-11
-#define LAST_SECTOR            7  // 512K bytes STM32F107VE has FLASH sectors 0-7
+//#define LAST_SECTOR           11  // 1024K bytes STM32F407 has FLASH sectors 0-11
+#define LAST_SECTOR            7  // 512K bytes STM32F407VE has FLASH sectors 0-7
 #define FLASH_SECTOR_NBPERBANK  (1)
 #define FLASH_SECTOR_SIZE       ((uint32_t)0x800)  // 2K bytes
 //#define FLASH_SECTOR_SIZE       ((uint32_t)0x4000)  // 16K bytes
