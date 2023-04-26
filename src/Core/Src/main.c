@@ -590,20 +590,20 @@ uint8_t Enter_Bootloader(void)
     char * pos = strrchr(new_filename, '.') + 1;  // find start of extension
     strncpy(pos, PGM_READ_WORD(&(FILE_EXT_CHANGE)), strlen(FILE_EXT_CHANGE) );  // copy FLASH into ram
     
-    //fr = f_unlink (new_filename); // if file already exists - delete it
-    //
-    //fr = f_rename(CONF_FILENAME, new_filename);  // rename file to .CUR
-    //if(fr != FR_OK)
-    //{
-    //  /* f_open failed */
-    //  print("File cannot be renamed.\n");
-    //  sprintf(msg, "FatFs error code: %u\n", fr);
-    //  print(msg);
-    //  
-    //  //SD_Eject();               // allow loading application even if can't rename
-    //  //print("SD ejected.\n");
-    //  //return ERR_SD_FILE;       
-    //}
+    fr = f_unlink (new_filename); // if file already exists - delete it
+    
+    fr = f_rename(CONF_FILENAME, new_filename);  // rename file to .CUR
+    if(fr != FR_OK)
+    {
+      /* f_open failed */
+      print("File cannot be renamed.\n");
+      sprintf(msg, "FatFs error code: %u\n", fr);
+      print(msg);
+      
+      //SD_Eject();               // allow loading application even if can't rename
+      //print("SD ejected.\n");
+      //return ERR_SD_FILE;       
+    }
   #endif
   
   /* Eject SD card */

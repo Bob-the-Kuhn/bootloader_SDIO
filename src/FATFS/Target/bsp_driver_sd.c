@@ -1,7 +1,7 @@
 /* USER CODE BEGIN Header */
 /**
  ******************************************************************************
-  * @file    bsp_driver_sd.c for F1 (based on stm3210e_eval_sd.c)
+  * @file    bsp_driver_sd.c for f1 (based on stm324x9i_eval_sd.c)
  * @brief   This file includes a generic uSD card driver.
  *          To be completed by the user according to the board used for the project.
  * @note    Some functions generated as weak: they can be overridden by
@@ -303,10 +303,10 @@ __weak uint8_t BSP_SD_IsDetected(void)
 {
   __IO uint8_t status = SD_PRESENT;
 
-//  if (BSP_PlatformIsDetected() == 0x0)
-//  {
-//    status = SD_NOT_PRESENT;
-//  }
+  if (BSP_PlatformIsDetected() == 0x0)
+  {
+    status = SD_NOT_PRESENT;
+  }
 
   return status;
 }

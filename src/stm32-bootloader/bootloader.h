@@ -25,9 +25,9 @@
 /** Select target MCU family: please define the target MCU family type below.
  * Currently supported MCU families:
  *  - STM32L4
- *  - STM32F4
+ *  - STM32F1
  */
-//#define STM32F4
+//#define STM32F1
 
 /** Check application checksum on startup */
 #define USE_CHECKSUM 0
@@ -47,8 +47,8 @@
 #define CLEAR_RESET_FLAGS 1
 
 /** Start address of application space in flash */
-//#define APP_ADDRESS (uint32_t)0x08008000
-#define APP_ADDRESS (uint32_t)0x0800A000
+#define APP_ADDRESS (uint32_t)0x08008000
+//#define APP_ADDRESS (uint32_t)0x0800A000
 //#define APP_ADDRESS (uint32_t)0x08020000  // first available for EXFAT
 /** End address of application space (address of last byte) */
 #define END_ADDRESS (uint32_t)0x080FFFFB
@@ -81,8 +81,8 @@
 //#define FLASH_SIZE            ((uint32_t)0x100000)  // 1024K bytes
 #define FLASH_SIZE            ((uint32_t)0x80000)  // 512K bytes
 //#define FLASH_SIZE            ((uint32_t)0x40000)  // 256K bytes
-//#define LAST_SECTOR           11  // 1024K bytes STM32F407 has FLASH sectors 0-11
-#define LAST_SECTOR            7  // 512K bytes STM32F407VE has FLASH sectors 0-7
+//#define LAST_SECTOR           11  // 1024K bytes STM32F107 has FLASH sectors 0-11
+#define LAST_SECTOR            7  // 512K bytes STM32F107VE has FLASH sectors 0-7
 #define FLASH_SECTOR_NBPERBANK  (1)
 #define FLASH_SECTOR_SIZE       ((uint32_t)0x800)  // 2K bytes
 //#define FLASH_SECTOR_SIZE       ((uint32_t)0x4000)  // 16K bytes
