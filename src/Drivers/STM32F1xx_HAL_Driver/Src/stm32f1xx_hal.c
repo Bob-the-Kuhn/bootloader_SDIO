@@ -303,43 +303,6 @@ __weak void HAL_IncTick(void)
   */
 __weak uint32_t HAL_GetTick(void)
 {
-  
-//  if (SysTick->CTRL && SysTick_CTRL_TICKINT_Msk) { // if timed out then inc uwTick
-//    HAL_IncTick(); 
-//    if (SysTick->CTRL && SysTick_CTRL_TICKINT_Msk) 
-//      while(SysTick->CTRL && SysTick_CTRL_TICKINT_Msk){};   // wait for timer to reload and start
-
-//  if (SysTick->CTRL && SysTick_CTRL_COUNTFLAG_Msk)  // if timed out then inc uwTick
-//    HAL_IncTick(); 
-      
-//uint32_t TickInt_temp = ((SysTick->CTRL >> 1) && 0x1);
-//  if (TickInt_temp) { // if timed out then inc uwTick
-//    HAL_IncTick(); 
-//    TickInt_temp =  ((SysTick->CTRL >> 1) && 0x1);
-//    if (TickInt_temp) {
-//      while(TickInt_temp) {TickInt_temp =  ((SysTick->CTRL >> 1) && 0x1);};   // wait for timer to reload and start
-//    }
-//  }
-
-//  uint32_t CTRL_COUNTFLAG_temp = ((SysTick->CTRL >> 16) && 0x1);
-//  if (CTRL_COUNTFLAG_temp) { // if timed out then inc uwTick
-//    HAL_IncTick(); 
-//    CTRL_COUNTFLAG_temp =  ((SysTick->CTRL >> 16) && 0x1);
-//    if (CTRL_COUNTFLAG_temp) {
-//      while(CTRL_COUNTFLAG_temp) {CTRL_COUNTFLAG_temp =  ((SysTick->CTRL >> 16) && 0x1);};   // wait for timer to reload and start
-//    }
-//  }
-
-  if (SysTick->VAL < 100) { 
-    SysTick->VAL = 0;
-    HAL_IncTick();
-  }
-    
-  return uwTick;
-}
-
-__weak uint32_t HAL_GetTick_2(void)
-{
   return uwTick;
 }
 
@@ -415,20 +378,8 @@ __weak void HAL_Delay(uint32_t Delay)
     wait += (uint32_t)(uwTickFreq);
   }
 
-  while ((HAL_GetTick_2() - tickstart) < wait)
+  while ((HAL_GetTick() - tickstart) < wait)
   {
-//    while (!(SysTick->CTRL && SysTick_CTRL_COUNTFLAG_Msk)) {}  // wait for SysTick counter to reload
-//    HAL_IncTick();
-    
-//  uint32_t CTRL_COUNTFLAG_temp = ((SysTick->CTRL >> 16) && 0x1);
-//  if (CTRL_COUNTFLAG_temp) { // if timed out then inc uwTick
-//    HAL_IncTick(); 
-//  }
-
-    while (SysTick->VAL > 100) {}  // wait for SysTick counter to be close to reloading
-    SysTick->VAL = 0;
-    HAL_IncTick();
-    
   }
 }
 
