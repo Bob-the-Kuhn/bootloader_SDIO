@@ -212,7 +212,7 @@ HAL_StatusTypeDef HAL_RCC_DeInit(void)
   /* Wait till HSI is ready */
   while (READ_BIT(RCC->CR, RCC_CR_HSIRDY) == RESET)
   {
-    if ((HAL_GetTick() - tickstart) > HSI_TIMEOUT_VALUE)
+    if ((HAL_GetTick() - tickstart) > HSI_TIMEOUT_VALUE + 2)
     {
       return HAL_TIMEOUT;
     }
@@ -230,7 +230,7 @@ HAL_StatusTypeDef HAL_RCC_DeInit(void)
   /* Wait till clock switch is ready */
   while (READ_BIT(RCC->CFGR, RCC_CFGR_SWS) != RESET)
   {
-    if ((HAL_GetTick() - tickstart) > CLOCKSWITCH_TIMEOUT_VALUE)
+    if ((HAL_GetTick() - tickstart) > CLOCKSWITCH_TIMEOUT_VALUE + 2)
     {
       return HAL_TIMEOUT;
     }
@@ -254,7 +254,7 @@ HAL_StatusTypeDef HAL_RCC_DeInit(void)
   /* Wait till PLL is disabled */
   while (READ_BIT(RCC->CR, RCC_CR_PLLRDY) != RESET)
   {
-    if ((HAL_GetTick() - tickstart) > PLL_TIMEOUT_VALUE)
+    if ((HAL_GetTick() - tickstart) > PLL_TIMEOUT_VALUE + 2)
     {
       return HAL_TIMEOUT;
     }
@@ -272,7 +272,7 @@ HAL_StatusTypeDef HAL_RCC_DeInit(void)
   /* Wait till HSE is disabled */
   while (READ_BIT(RCC->CR, RCC_CR_HSERDY) != RESET)
   {
-    if ((HAL_GetTick() - tickstart) > HSE_TIMEOUT_VALUE)
+    if ((HAL_GetTick() - tickstart) > HSE_TIMEOUT_VALUE + 2)
     {
       return HAL_TIMEOUT;
     }
@@ -291,7 +291,7 @@ HAL_StatusTypeDef HAL_RCC_DeInit(void)
   /* Wait till PLL2 is disabled */
   while (READ_BIT(RCC->CR, RCC_CR_PLL2RDY) != RESET)
   {
-    if ((HAL_GetTick() - tickstart) > PLL2_TIMEOUT_VALUE)
+    if ((HAL_GetTick() - tickstart) > PLL2_TIMEOUT_VALUE + 2)
     {
       return HAL_TIMEOUT;
     }
@@ -308,7 +308,7 @@ HAL_StatusTypeDef HAL_RCC_DeInit(void)
   /* Wait till PLL3 is disabled */
   while (READ_BIT(RCC->CR, RCC_CR_PLL3RDY) != RESET)
   {
-    if ((HAL_GetTick() - tickstart) > PLLI2S_TIMEOUT_VALUE)
+    if ((HAL_GetTick() - tickstart) > PLLI2S_TIMEOUT_VALUE + 2)
     {
       return HAL_TIMEOUT;
     }
@@ -388,7 +388,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
         /* Wait till HSE is ready */
         while (__HAL_RCC_GET_FLAG(RCC_FLAG_HSERDY) == RESET)
         {
-          if ((HAL_GetTick() - tickstart) > HSE_TIMEOUT_VALUE)
+          if ((HAL_GetTick() - tickstart) > HSE_TIMEOUT_VALUE + 2)
           {
             return HAL_TIMEOUT;
           }
@@ -402,7 +402,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
         /* Wait till HSE is disabled */
         while (__HAL_RCC_GET_FLAG(RCC_FLAG_HSERDY) != RESET)
         {
-          if ((HAL_GetTick() - tickstart) > HSE_TIMEOUT_VALUE)
+          if ((HAL_GetTick() - tickstart) > HSE_TIMEOUT_VALUE + 2)
           {
             return HAL_TIMEOUT;
           }
@@ -447,7 +447,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
         /* Wait till HSI is ready */
         while (__HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == RESET)
         {
-          if ((HAL_GetTick() - tickstart) > HSI_TIMEOUT_VALUE)
+          if ((HAL_GetTick() - tickstart) > HSI_TIMEOUT_VALUE + 2)
           {
             return HAL_TIMEOUT;
           }
@@ -467,7 +467,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
         /* Wait till HSI is disabled */
         while (__HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) != RESET)
         {
-          if ((HAL_GetTick() - tickstart) > HSI_TIMEOUT_VALUE)
+          if ((HAL_GetTick() - tickstart) > HSI_TIMEOUT_VALUE + 2)
           {
             return HAL_TIMEOUT;
           }
@@ -493,7 +493,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
       /* Wait till LSI is ready */
       while (__HAL_RCC_GET_FLAG(RCC_FLAG_LSIRDY) == RESET)
       {
-        if ((HAL_GetTick() - tickstart) > LSI_TIMEOUT_VALUE)
+        if ((HAL_GetTick() - tickstart) > LSI_TIMEOUT_VALUE + 2)
         {
           return HAL_TIMEOUT;
         }
@@ -513,7 +513,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
       /* Wait till LSI is disabled */
       while (__HAL_RCC_GET_FLAG(RCC_FLAG_LSIRDY) != RESET)
       {
-        if ((HAL_GetTick() - tickstart) > LSI_TIMEOUT_VALUE)
+        if ((HAL_GetTick() - tickstart) > LSI_TIMEOUT_VALUE + 2)
         {
           return HAL_TIMEOUT;
         }
@@ -546,7 +546,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
 
       while (HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP))
       {
-        if ((HAL_GetTick() - tickstart) > RCC_DBP_TIMEOUT_VALUE)
+        if ((HAL_GetTick() - tickstart) > RCC_DBP_TIMEOUT_VALUE + 2)
         {
           return HAL_TIMEOUT;
         }
@@ -564,7 +564,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
       /* Wait till LSE is ready */
       while (__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY) == RESET)
       {
-        if ((HAL_GetTick() - tickstart) > RCC_LSE_TIMEOUT_VALUE)
+        if ((HAL_GetTick() - tickstart) > RCC_LSE_TIMEOUT_VALUE + 2)
         {
           return HAL_TIMEOUT;
         }
@@ -578,7 +578,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
       /* Wait till LSE is disabled */
       while (__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY) != RESET)
       {
-        if ((HAL_GetTick() - tickstart) > RCC_LSE_TIMEOUT_VALUE)
+        if ((HAL_GetTick() - tickstart) > RCC_LSE_TIMEOUT_VALUE + 2)
         {
           return HAL_TIMEOUT;
         }
@@ -631,7 +631,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
         /* Wait till PLL2 is disabled */
         while (__HAL_RCC_GET_FLAG(RCC_FLAG_PLL2RDY) != RESET)
         {
-          if ((HAL_GetTick() - tickstart) > PLL2_TIMEOUT_VALUE)
+          if ((HAL_GetTick() - tickstart) > PLL2_TIMEOUT_VALUE + 2)
           {
             return HAL_TIMEOUT;
           }
@@ -652,7 +652,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
         /* Wait till PLL2 is ready */
         while (__HAL_RCC_GET_FLAG(RCC_FLAG_PLL2RDY)  == RESET)
         {
-          if ((HAL_GetTick() - tickstart) > PLL2_TIMEOUT_VALUE)
+          if ((HAL_GetTick() - tickstart) > PLL2_TIMEOUT_VALUE + 2)
           {
             return HAL_TIMEOUT;
           }
@@ -672,7 +672,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
         /* Wait till PLL2 is disabled */
         while (__HAL_RCC_GET_FLAG(RCC_FLAG_PLL2RDY)  != RESET)
         {
-          if ((HAL_GetTick() - tickstart) > PLL2_TIMEOUT_VALUE)
+          if ((HAL_GetTick() - tickstart) > PLL2_TIMEOUT_VALUE + 2)
           {
             return HAL_TIMEOUT;
           }
@@ -705,7 +705,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
         /* Wait till PLL is disabled */
         while (__HAL_RCC_GET_FLAG(RCC_FLAG_PLLRDY)  != RESET)
         {
-          if ((HAL_GetTick() - tickstart) > PLL_TIMEOUT_VALUE)
+          if ((HAL_GetTick() - tickstart) > PLL_TIMEOUT_VALUE + 2)
           {
             return HAL_TIMEOUT;
           }
@@ -740,7 +740,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
         /* Wait till PLL is ready */
         while (__HAL_RCC_GET_FLAG(RCC_FLAG_PLLRDY)  == RESET)
         {
-          if ((HAL_GetTick() - tickstart) > PLL_TIMEOUT_VALUE)
+          if ((HAL_GetTick() - tickstart) > PLL_TIMEOUT_VALUE + 2)
           {
             return HAL_TIMEOUT;
           }
@@ -757,7 +757,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
         /* Wait till PLL is disabled */
         while (__HAL_RCC_GET_FLAG(RCC_FLAG_PLLRDY)  != RESET)
         {
-          if ((HAL_GetTick() - tickstart) > PLL_TIMEOUT_VALUE)
+          if ((HAL_GetTick() - tickstart) > PLL_TIMEOUT_VALUE + 2)
           {
             return HAL_TIMEOUT;
           }
@@ -903,7 +903,7 @@ if (((RCC_ClkInitStruct->ClockType) & RCC_CLOCKTYPE_HCLK) == RCC_CLOCKTYPE_HCLK)
 
     while (__HAL_RCC_GET_SYSCLK_SOURCE() != (RCC_ClkInitStruct->SYSCLKSource << RCC_CFGR_SWS_Pos))
     {
-      if ((HAL_GetTick() - tickstart) > CLOCKSWITCH_TIMEOUT_VALUE)
+      if ((HAL_GetTick() - tickstart) > CLOCKSWITCH_TIMEOUT_VALUE + 2)
       {
         return HAL_TIMEOUT;
       }

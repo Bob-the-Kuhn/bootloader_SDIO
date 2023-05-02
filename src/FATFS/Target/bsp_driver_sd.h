@@ -59,7 +59,6 @@
   #undef SD_DATATIMEOUT
 #endif
 //#define SD_DATATIMEOUT           ((uint32_t)100000000)
-#define SD_DATATIMEOUT           3000
 
 #ifdef OLD_API
 /* kept to avoid issue when migrating old projects. */

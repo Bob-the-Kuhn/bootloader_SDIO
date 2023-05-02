@@ -31,7 +31,6 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "main.h"
-extern UART_HandleTypeDef huart1;                                 
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
