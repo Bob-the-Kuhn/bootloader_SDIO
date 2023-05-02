@@ -18,7 +18,7 @@
 #include "main.h"
 #include "main_boot.h"
 #if(USE_CHECKSUM)
-  #include "stm32f4xx_hal_crc.h"
+  #include "stm32f1xx_hal_crc.h"
 #endif
 #include <string.h>  // debug
 #include <stdio.h>   // debug
@@ -40,6 +40,16 @@ uint16_t APP_first_sector = 0;
 uint32_t APP_first_addr = 0;
 uint32_t WRITE_protection = 0xFFFFFFFF;  // default to removing write protection from all pages 
 
+// force the following unintialized variables into a seperate section so they don't get overwritten
+// when the reset routine zeroes out the bss section       
+uint32_t __attribute__((section("no_init"))) WRITE_Prot_Old_Flag;             // flag if protection was removed (in case need to restore write protection)
+uint32_t __attribute__((section("no_init"))) Write_Prot_Old;
+// back to normal
+uint32_t Magic_Location = Magic_BootLoader;  // flag to tell if to boot into bootloader or the application
+// provide method for assembly file to access #define values
+uint32_t MagicBootLoader = Magic_BootLoader;
+uint32_t MagicApplication = Magic_Application;
+uint32_t APP_ADDR = APP_ADDRESS;
 /**
  * @brief  This function initializes bootloader and flash.
  * @return Bootloader error code ::eBootloaderErrorCodes
@@ -87,8 +97,7 @@ uint8_t Bootloader_Init(void)
     print(msg);
     sprintf(msg, "Lowest possible APP_ADDRESS is %08lX\n", APP_first_addr);
     print(msg);
-    sprintf(msg, "WRITE_protection mask: %08lX\n", WRITE_protection);
-    print(msg);   
+ 
     /* check APP_ADDRESS */
     if (APP_ADDRESS & 0x1ff) {
       print("ERROR - application address not on 512 byte boundary\n");
@@ -120,8 +129,7 @@ uint8_t Bootloader_Erase(void)
     pEraseInit.Banks = 0;                          // don't care in erase pages mode    
 //    pEraseInit.PageAddress = APP_first_addr;       // address within first page to erase
 //    pEraseInit.NbPages =  FLASH_SIZE/FLASH_SECTOR_SIZE - APP_first_sector + 1;
-;
-    __disable_irq();
+
     HAL_FLASH_Unlock();  
     
     LED_G1_ON(); 
@@ -276,14 +284,21 @@ uint8_t Bootloader_ConfigProtection(uint32_t protection, uint8_t set)
     
     HAL_FLASHEx_OBGetConfig(&OBStruct);  // get current FLASH config
     
+    if (!set) Write_Prot_Old = OBStruct.WRPPage;   // save current FLASH protect incase we do a restore later
+
     OBStruct.OptionType = OPTIONBYTE_WRP;       // program write protection mode
     OBStruct.WRPPage = protection;            // select affected sectors
     OBStruct.WRPState = set ? OB_WRPSTATE_ENABLE : OB_WRPSTATE_DISABLE;    //  set/clear write protection
     status = HAL_FLASHEx_OBProgram(&OBStruct);  // write 
     if(status == HAL_OK)
     {
-        /* Loading Flash Option Bytes - this generates a system reset. */    // apparently not on a STM32F407
-        HAL_FLASH_OB_Launch();
+      if (!set) {
+        print("write protection removed\n");
+        WRITE_Prot_Old_Flag = WRITE_Prot_Original_flag;  // flag that protection was removed so can 
+      }                                             // restore write protection after next reset)
+
+      /* Flash Option Bytes are only changed/updated during a system reset. */                                     
+      NVIC_SystemReset();  // send system through reset
     }
 
     status |= HAL_FLASH_OB_Lock();
@@ -364,30 +379,18 @@ uint8_t Bootloader_CheckForApplication(void)
 /**
  * @brief  This function performs the jump to the user application in flash.
  * @details The function carries out the following operations:
- *  - De-initialize the clock and peripheral configuration
- *  - Stop the systick
- *  - Set the vector table location (if ::SET_VECTOR_TABLE is enabled)
- *  - Sets the stack pointer location
- *  - Perform the jump
+ *  - Sets the flag that we should load application after the next reset
+ *  - Sends the card through reset
+ *  
+ *  The reset handler checks this flag and will either continue to start the
+ *  bootloader or it will start the application.
  */
-void Bootloader_JumpToApplication(void)
-{
-    uint32_t JumpAddress = *(__IO uint32_t*)(APP_ADDRESS + 4);
-    pFunction Jump       = (pFunction)JumpAddress;
-    
-    HAL_RCC_DeInit();
-    HAL_DeInit();
 
-    SysTick->CTRL = 0;
-    SysTick->LOAD = 0;
-    SysTick->VAL  = 0;
-
-#if(SET_VECTOR_TABLE)
-    SCB->VTOR = APP_ADDRESS;
-#endif
-
-    __set_MSP(*(__IO uint32_t*)APP_ADDRESS);
-    Jump();
+void Bootloader_JumpToApplication(void) {
+  
+  Magic_Location = Magic_Application;  // flag that we should load application 
+                                       // after the next reset
+  NVIC_SystemReset();                  // send the system through reset
 }
 
 /**

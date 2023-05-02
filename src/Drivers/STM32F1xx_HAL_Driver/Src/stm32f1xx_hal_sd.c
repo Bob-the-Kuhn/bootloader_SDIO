@@ -879,7 +879,8 @@ HAL_StatusTypeDef HAL_SD_WriteBlocks(SD_HandleTypeDef *hsd, uint8_t *pData, uint
         return HAL_TIMEOUT;
       }
     }
-
+//SDIO_WriteFIFO(hsd->Instance, &data);    
+//HAL_Delay(5);  // see if a del
     /* Send stop transmission command in case of multiblock write */
     if(__HAL_SD_GET_FLAG(hsd, SDIO_FLAG_DATAEND) && (NumberOfBlocks > 1U))
     {

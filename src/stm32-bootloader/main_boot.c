@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main_boot.h"
+#include "bootloader.h"                       
 #include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -25,7 +26,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include "bootloader.h"
 #include "ffconf.h"
 #include <ctype.h>
 #include <stdint.h>
@@ -51,7 +51,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-extern UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 
@@ -85,6 +84,13 @@ void print(const char* str);   // debug
 int main_boot_init(void)
 {
   /* USER CODE BEGIN 1 */
+  
+  
+    //char msg1[64];
+    //sprintf(msg1, "SYSCLK_Frequency %08lu\n", HAL_RCC_GetSysClockFreq());
+    //print(msg1);
+    //sprintf(msg1, "HCLK_Frequency   %08lu\n", HAL_RCC_GetHCLKFreq());
+    //print(msg1);
 
   /* USER CODE END 1 */
 
@@ -96,8 +102,7 @@ int main_boot_init(void)
 
   /* USER CODE BEGIN Init */
 
-  __disable_irq();
-
+  HAL_NVIC_EnableIRQ(SysTick_IRQn);  // enable Systick irq                              
   /* USER CODE END Init */
 
   /* USER CODE BEGIN 2 */
@@ -167,19 +172,9 @@ static void main_boot(void)
     
     print("Launching Application.\n");
     LED_G1_ON();
-    HAL_Delay(200);
-    LED_G1_OFF();
     LED_G2_ON();
-    HAL_Delay(200);
-    LED_G2_OFF();
-    HAL_Delay(1000);
     
-    /* De-initialize bootloader hardware & peripherals */
-    //        SD_DeInit();
-    //        GPIO_DeInit();
-    #if(USE_VCP)
-      //        UART1_DeInit();
-    #endif /* USE_VCP */
+    WRITE_Prot_Old_Flag = 0;  //  set "restore write protect" state machine back to unitialized
     
     /* Launch application */
     Bootloader_JumpToApplication();
@@ -255,34 +250,44 @@ uint8_t Enter_Bootloader(void)
   /* Check for flash write protection of application area*/
   if(~Bootloader_GetProtectionStatus() & WRITE_protection) {
     print("Application space in flash is write protected.\n");
-
-    //        print("Press button to disable flash write protection...\n");
-    //        LED_ALL_ON();
-    //        for(i = 0; i < 100; ++i)
-    //        {
-    //            LED_ALL_TG();
-    //            HAL_Delay(50);
-    //            if(IS_BTN_PRESSED())
-    //            {
-    //                print("Disabling write protection and generating system "
-    //                      "reset...\n");
-    //                Bootloader_ConfigProtection(BL_PROTECTION_NONE);
-    //            }
-    //        }
-    //        LED_ALL_OFF();
-    //        print("Button was not pressed, write protection is still active.\n");
-    print("Disabling write protection and generating system reset...\n"); 
-    print("  May require power cycle to recover.\n");
-    if (Bootloader_ConfigProtection(WRITE_protection, CLEAR) != BL_OK)
-      {
-        print("Failed to clear write protection.\n");
-        print("Exiting Bootloader.\n");
-        return ERR_OK;
-      }
+    if (IGNORE_WRITE_PROTECTION) {
+      //        print("Press button to disable flash write protection...\n");
+      //        LED_ALL_ON();
+      //        for(i = 0; i < 100; ++i)
+      //        {
+      //            LED_ALL_TG();
+      //            HAL_Delay(50);
+      //            if(IS_BTN_PRESSED())
+      //            {
+      //                print("Disabling write protection and generating system "
+      //                      "reset...\n");
+      //                Bootloader_ConfigProtection(BL_PROTECTION_NONE);
+      //            }
+      //        }
+      //        LED_ALL_OFF();
+      //        print("Button was not pressed, write protection is still active.\n");
+      if (!(WRITE_Prot_Old_Flag == WRITE_Prot_Old_Flag_Restored_flag)) {   // already restored original protection so don't initiate the process again
+        print("Disabling write protection and generating system reset...\n"); 
+        print("  May require power cycle to recover.\n");
+        Magic_Location = Magic_BootLoader;  // flag that we should load the bootloader 
+                                            // after the next reset
+        if (Bootloader_ConfigProtection(WRITE_protection, WP_CLEAR) != BL_OK)   // sends system though reset - no more code executed unless there's an error
+          {
+            print("Failed to clear write protection.\n");
+            print("Exiting Bootloader.\n");
+            return ERR_OK;
+          }
   
-    //        print("Exiting Bootloader.\n");
-    print("write protection removed\n");
-    //        return ERR_WRP_ACTIVE;
+        print("write protection removed\n");
+
+                WRITE_Prot_Old_Flag = WRITE_Prot_Original_flag;  // flag that protection was removed so can 
+                                                       // restore write protection after next reset)
+        
+        Magic_Location = Magic_BootLoader;  // flag that we should load the bootloader 
+                                            // after the next reset
+        NVIC_SystemReset();  // send system through reset
+      }
+    }
   }
   
   /* Step 2: Erase Flash */
@@ -418,9 +423,9 @@ uint8_t Enter_Bootloader(void)
       sprintf(msg, "FatFs error code: %u\n", fr);
       print(msg);
       
-      //SD_Eject();               // allow loading application even if can't rename
-      //print("SD ejected.\n");
-      //return ERR_SD_FILE;       
+      // allow loading application even if can't rename
+      Magic_Location = Magic_Application;  // flag that we should load application 
+                                           // after the next reset    
     }
   #endif
   
@@ -429,12 +434,24 @@ uint8_t Enter_Bootloader(void)
   print("SD ejected.\n");
   
   /* Enable flash write protection on application area */
-  #if(USE_WRITE_PROTECTION)
+  #if(USE_WRITE_PROTECTION && !RESTORE_WRITE_PROTECTION)
     print("Enabling flash write protection and generating system reset...\n");
-    if(Bootloader_ConfigProtection(WRITE_protection, SET)) != BL_OK)
+    if (Bootloader_ConfigProtection(WRITE_protection, WP_SET) != BL_OK)  // sends system though reset - no more code executed unless there's an error
     {
       print("Failed to enable write protection.\n");
-      print("Exiting Bootloader.\n");
+    }
+  #endif
+  
+  /* Restore flash write protection */
+  #if(!USE_WRITE_PROTECTION && RESTORE_WRITE_PROTECTION && IGNORE_WRITE_PROTECTION)
+    if (WRITE_Prot_Old_Flag == WRITE_Prot_Original_flag) {
+      WRITE_Prot_Old_Flag = WRITE_Prot_Old_Flag_Restored_flag;  // indicate we've restored the protection
+      print("Restoring flash write protection and generating system reset...\n");
+      print("  May require power cycle to recover.\n");
+      if (Bootloader_ConfigProtection(Write_Prot_Old, WP_SET) != BL_OK)  // sends system though reset - no more code executed unless there's an error
+      {
+        print("Failed to restore write protection.\n");
+      }
     }
   #endif
   
