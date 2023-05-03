@@ -4760,6 +4760,7 @@ FRESULT f_rename (
 						fs->dirbuf[XDIR_NumSec] = nf; fs->dirbuf[XDIR_NumName] = nn;
 						st_word(fs->dirbuf + XDIR_NameHash, nh);
 /* Start of critical section where an interruption can cause a cross-link */
+             __disable_irq();               
 						res = store_xdir(&djn);
 					}
 				}
@@ -4785,6 +4786,7 @@ FRESULT f_rename (
 								res = FR_INT_ERR;
 							} else {
 /* Start of critical section where an interruption can cause a cross-link */
+                                                                                __disable_irq();
 								res = move_window(fs, dw);
 								dir = fs->win + SZDIRE * 1;	/* Ptr to .. entry */
 								if (res == FR_OK && dir[1] == '.') {
@@ -4803,6 +4805,7 @@ FRESULT f_rename (
 				}
 			}
 /* End of the critical section */
+     __enable_irq();              
 		}
 		FREE_NAMBUF();
 	}

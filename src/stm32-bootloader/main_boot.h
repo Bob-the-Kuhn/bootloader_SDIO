@@ -31,7 +31,8 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "main.h"
-extern UART_HandleTypeDef huart1;                                 
+extern UART_HandleTypeDef huart1;    
+extern char msg[64];
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -117,6 +118,9 @@ enum eApplicationErrorCodes
 void Error_Handler_Boot(void);
 
 /* USER CODE BEGIN EFP */
+
+#define ELAPSED_TIME_TOTAL  Elapsed_Time_Total()
+#define ELAPSED_TIME_LAST   ELAPSED_TIME_TOTAL - Elapsed_time_last
 
 /* USER CODE END EFP */
 

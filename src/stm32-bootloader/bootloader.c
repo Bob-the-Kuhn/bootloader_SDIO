@@ -92,7 +92,6 @@ uint8_t Bootloader_Init(void)
       }
     }
      
-    char msg[64];
     sprintf(msg, "\nBOOT_LOADER_END %08lX\n", BOOT_LOADER_END);
     print(msg);
     sprintf(msg, "Lowest possible APP_ADDRESS is %08lX\n", APP_first_addr);
@@ -122,7 +121,6 @@ uint8_t Bootloader_Init(void)
  */
 uint8_t Bootloader_Erase(void)
 {
-    char msg[64];
     uint32_t PageError;
     FLASH_EraseInitTypeDef pEraseInit;
     pEraseInit.TypeErase = FLASH_TYPEERASE_PAGES;  // erase pages mode
@@ -187,7 +185,6 @@ uint8_t Bootloader_FlashNext(uint64_t data)
         return BL_WRITE_ERROR;
     }
 
-    char msg[64]; //debug
     uint64_t read_data;
     status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flash_ptr, data);
     if(status == HAL_OK)
