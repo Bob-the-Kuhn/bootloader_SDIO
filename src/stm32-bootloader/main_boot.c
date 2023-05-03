@@ -67,14 +67,6 @@ void UART1_Init(void);
 void UART1_DeInit(void);
 void Error_Handler_Boot(void);
 void print(const char* str);   // debug
-uint32_t Elapsed_time_now;
-uint32_t Elapsed_time_initial;
-uint32_t Elapsed_time_last;
-// force the following unintialized variable into a seperate section so it don't get overwritten
-// when the reset routine zeroes out the bss section
-uint32_t __attribute__((section("no_init"))) Elapsed_Time_Total_Saved;
-uint32_t __attribute__((section("no_init"))) Elapsed_Time_Saved_Flag;
-#define Elapsed_Time_Flag 0xB0B9B0B0
 
 #define PGM_READ_WORD(x) *(x)
 
@@ -85,14 +77,6 @@ char msg[64];
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-uint32_t Elapsed_Time_Total (void) {
-  if (Elapsed_Time_Saved_Flag != Elapsed_Time_Flag) {
-    Elapsed_Time_Total_Saved = 0;
-    Elapsed_Time_Saved_Flag = Elapsed_Time_Flag;
-  }
-  return Elapsed_time_now - Elapsed_time_initial + Elapsed_Time_Total_Saved;
-}
-
 /* USER CODE END 0 */
 
 /**
@@ -102,8 +86,6 @@ uint32_t Elapsed_Time_Total (void) {
 int main_boot_init(void)
 {
   /* USER CODE BEGIN 1 */
-
-  Elapsed_time_initial = HAL_GetTick();
 
     //sprintf(msg1, "SYSCLK_Frequency %08lu\n", HAL_RCC_GetSysClockFreq());
     //print(msg1);
@@ -171,12 +153,6 @@ static void main_boot(void)
   Bootloader_Init();
   uint8_t temp_stat = Enter_Bootloader();
 
-  Elapsed_time_now = HAL_GetTick();
-  sprintf(msg, "\nTotal elapsed time: %lu\n", ELAPSED_TIME_TOTAL);
-  print(msg);
-  Elapsed_Time_Saved_Flag = 0;  // start elapsed time over for next cycle
-  
-
   if((temp_stat == ERR_FLASH) || (temp_stat == ERR_VERIFY)) Error_Handler_Boot();
 
   /* Check if there is application in user flash area */
@@ -223,12 +199,12 @@ static void main_boot(void)
 uint8_t Enter_Bootloader(void)
 {
   FRESULT fr;
-  UINT num;
+
   //    uint8_t i;
   uint8_t status;
-  uint64_t data;
+  //uint64_t data;
   uint32_t cntr;
-  uint32_t addr;
+//  uint32_t addr;
   //char SDPath[4] = {0x00};   /* SD logical drive path */
 
   /* Mount SD card */
@@ -270,11 +246,6 @@ uint8_t Enter_Bootloader(void)
   }
   print("App size OK.\n");
 
-  Elapsed_time_now = HAL_GetTick();
-  sprintf(msg, "\nTotal elapsed time: %lu, initial file open phase: %lu\n", ELAPSED_TIME_TOTAL, ELAPSED_TIME_LAST);
-  print(msg);
-  Elapsed_time_last = HAL_GetTick();
-
   /* Step 1: Init Bootloader and Flash */
 
   /* Check for flash write protection of application area*/
@@ -304,8 +275,6 @@ uint8_t Enter_Bootloader(void)
         SD_Eject();
         Magic_Location = Magic_BootLoader;  // flag that we should load the bootloader
                                             // after the next reset
-        Elapsed_time_now = HAL_GetTick();
-        Elapsed_Time_Total_Saved = ELAPSED_TIME_TOTAL;
         if (Bootloader_ConfigProtection(WRITE_protection, WP_CLEAR) != BL_OK)   // sends system though reset - no more code executed unless there's an error
           {
             print("Failed to clear write protection.\n");
@@ -331,10 +300,6 @@ uint8_t Enter_Bootloader(void)
   Bootloader_Erase();
   LED_G2_OFF();
   print("Flash erase finished.\n");
-  Elapsed_time_now = HAL_GetTick();
-  sprintf(msg, "\nTotal elapsed time: %lu, FLASH erase phase: %lu\n", ELAPSED_TIME_TOTAL, ELAPSED_TIME_LAST);
-  print(msg);
-  Elapsed_time_last = HAL_GetTick();
 
   /* If BTN is pressed, then skip programming */
   //   if(IS_BTN_PRESSED())
@@ -351,23 +316,21 @@ uint8_t Enter_Bootloader(void)
   print("Starting programming...\n");
   LED_G2_ON();
   cntr = 0;
+  UINT num;
+  
   Bootloader_FlashBegin();
   do
   {
-    data = 0xFFFFFFFFFFFFFFFF;
-    fr   = f_read(&SDFile, &data, 8, &num);
+    uint8_t buffer[512];
+        
+    fr   = f_read(&SDFile, buffer, 512, &num);  
     if(num)
     {
-      status = Bootloader_FlashNext(data);
-      if(status == BL_OK)
-      {
-        cntr++;
-      }
-      else
-      {
-        sprintf(msg, "Programming error at: %lu byte (%08lX)\n", (cntr * 8), (cntr * 8));
-        print(msg);
+      cntr += num;
+      status = Bootloader_FlashNext_Buf(buffer, num);
+      if(status != BL_OK)
 
+      {
         f_close(&SDFile);
         SD_Eject();
         print("SD ejected.\n");
@@ -376,11 +339,8 @@ uint8_t Enter_Bootloader(void)
         return ERR_FLASH;
       }
     }
-    if(cntr % 256 == 0)
-    {
-      /* Toggle green LED during programming */
-      LED_G1_TG();
-    }
+    /* Toggle green LED during programming */
+    LED_G1_TG();
   } while((fr == FR_OK) && (num > 0));
 
   /* Step 4: Finalize Programming */
@@ -388,13 +348,8 @@ uint8_t Enter_Bootloader(void)
   f_close(&SDFile);
   LED_ALL_OFF();
   print("Programming finished.\n");
-  sprintf(msg, "Flashed: %lu bytes.\n", (cntr * 8));
+  sprintf(msg, "Flashed: %lu bytes.\n", cntr);
   print(msg);
-
-  Elapsed_time_now = HAL_GetTick();
-  sprintf(msg, "\nTotal elapsed time: %lu, FLASH programming phase: %lu\n", ELAPSED_TIME_TOTAL, ELAPSED_TIME_LAST);
-  print(msg);
-  Elapsed_time_last = HAL_GetTick();
 
   /* Open file for verification */
   fr = f_open(&SDFile, CONF_FILENAME, FA_READ);
@@ -411,6 +366,7 @@ uint8_t Enter_Bootloader(void)
   }
 
   /* Step 5: Verify Flash Content */
+#if 0  // adds 25-26 seconds but doesn't add any value (verify during programming only costs 60mS)
   print("Verifying ...\n");
   addr = APP_ADDRESS;
   cntr = 0;
@@ -444,13 +400,10 @@ uint8_t Enter_Bootloader(void)
       LED_G2_TG();
     }
   } while((fr == FR_OK) && (num > 0));
-  f_close(&SDFile);
   print("Verification passed.\n");
+#endif  
 
-  Elapsed_time_now = HAL_GetTick();
-  sprintf(msg, "\nTotal elapsed time: %lu, FLASH verify phase: %lu\n", ELAPSED_TIME_TOTAL, ELAPSED_TIME_LAST);
-  print(msg);
-  Elapsed_time_last = HAL_GetTick();
+  f_close(&SDFile);
 
   LED_G1_OFF();
 
@@ -465,7 +418,7 @@ uint8_t Enter_Bootloader(void)
 
     fr = f_unlink (new_filename); // if file already exists - delete it
 
-    if (fr == FR_OK) {
+    if ((fr == FR_OK) || (fr == FR_NO_FILE)) {
 
       fr = f_rename(CONF_FILENAME, new_filename);  // rename file to .CUR
       if (fr != FR_OK)
@@ -500,8 +453,7 @@ uint8_t Enter_Bootloader(void)
   /* Enable flash write protection on application area */
   #if(USE_WRITE_PROTECTION && !RESTORE_WRITE_PROTECTION)
     print("Enabling flash write protection and generating system reset...\n");
-    Elapsed_time_now = HAL_GetTick();
-    Elapsed_Time_Total_Saved = ELAPSED_TIME_TOTAL
+
     if (Bootloader_ConfigProtection(WRITE_protection, WP_SET) != BL_OK)  // sends system though reset - no more code executed unless there's an error
     {
       print("Failed to enable write protection.\n");
@@ -514,8 +466,7 @@ uint8_t Enter_Bootloader(void)
       WRITE_Prot_Old_Flag = WRITE_Prot_Old_Flag_Restored_flag;  // indicate we've restored the protection
       print("Restoring flash write protection and generating system reset...\n");
       print("  May require power cycle to recover.\n");
-      Elapsed_time_now = HAL_GetTick();
-      Elapsed_Time_Total_Saved = ELAPSED_TIME_TOTAL;
+
       if (Bootloader_ConfigProtection(Write_Prot_Old, WP_SET) != BL_OK)  // sends system though reset - no more code executed unless there's an error
       {
         print("Failed to restore write protection.\n");
@@ -550,11 +501,6 @@ void Error_Handler_Boot(void)
   /* USER CODE BEGIN Error_Handler_Boot_Debug */
   /* User can add his own implementation to report the HAL error return state */
   //__disable_irq();   //  HAL_Delay doesn't work if IRQs are disabled
-  
-  Elapsed_time_now = HAL_GetTick();
-  sprintf(msg, "\n ERROR HANDLER\nTotal elapsed time: %lu\n", ELAPSED_TIME_TOTAL);
-  print(msg);
-  Elapsed_Time_Saved_Flag = 0;  // start elapsed time over for next cycle
   
   while (1)
   {

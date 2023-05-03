@@ -75,7 +75,7 @@ uint8_t Bootloader_Init(void)
     
     // The protection is not affected if a page pair/block only has the bootloader in it.
     // The protection is cleared if a page pair/block has only the application space in it
-    // The protection is cleared if a paige pair/block has both the bootloader the application space in it
+    // The protection is cleared if a page pair/block has both the bootloader the application space in it
  
     
     uint32_t mask = 1;  // mask for clearing write protect bits
@@ -166,6 +166,83 @@ uint8_t Bootloader_FlashBegin(void)
     return BL_OK;
 }
 
+
+
+/**
+ * @brief  Program 16 bit data into flash: this function writes an 2 byte (16 bit)
+ *         data chunk into the flash and increments the data pointer.
+ * @see    README for futher information
+ * @param  data: pointer to buffer with data to be written into flash
+                 buffer needs to be 16 bit word aligned to match FLASH writes
+           count: number of bytes in the buffer
+ * @return Bootloader error code ::eBootloaderErrorCodes
+ * @retval BL_OK: upon success
+ * @retval BL_WRITE_ERROR: upon failure
+ */
+uint8_t Bootloader_FlashNext_Buf(uint8_t *data, UINT count)
+{
+    if(!(flash_ptr <= (FLASH_BASE + FLASH_SIZE - count)) ||
+       (flash_ptr < APP_ADDRESS))
+    {
+        HAL_FLASH_Lock();
+        return BL_WRITE_ERROR;
+    }
+
+    uint16_t read_data;
+    uint16_t data_16;
+    uint16_t i;
+    for (i = 0; i < count/2; i++) {
+      data_16 = (uint16_t) (*data  + (*(data+1) << 8));  // assemble two bytes
+      SET_BIT(FLASH->CR, FLASH_CR_PG);  // tell FLASH controller we'll be writing to FLASH
+      *(__IO uint16_t*)flash_ptr = data_16;
+      read_data = *(uint16_t*)flash_ptr;
+      if (read_data != data_16)            
+      {
+      /* Flash content doesn't match source content */
+        HAL_FLASH_Lock();
+        print("Programming error\n");
+        sprintf(msg, "expected data (16 bit): %04X\n", data_16);
+        print(msg);   
+        sprintf(msg, "actual data (16 bit)  : %04X\n", read_data);
+        print(msg);   
+        sprintf(msg, "absolute address (byte): %08lX\n", flash_ptr);
+        print(msg);
+    
+        HAL_FLASH_Lock();
+        return BL_WRITE_ERROR;
+      }
+      flash_ptr += 2;
+      data += 2;
+    } 
+    
+    if (count%2) {  // have an odd number of bytes - need to pad it out & write it - this will only happen at the end of the file
+      data_16 = ((*data << 8) + *(data+1));  // assemble two bytes into a
+      SET_BIT(FLASH->CR, FLASH_CR_PG);  // tell FLASH controller we'll be writing to FLASH
+      *(__IO uint16_t*)flash_ptr = data_16;
+      read_data = *(uint16_t*)flash_ptr;
+      if(read_data != data_16)            
+      {
+      /* Flash content doesn't match source content */
+        HAL_FLASH_Lock();
+        print("Programming error\n");
+        sprintf(msg, "expected data (16 bit): %04X\n", data_16);
+        print(msg);   
+        sprintf(msg, "actual data (16 bit)  : %04X\n", read_data);
+        print(msg);   
+        sprintf(msg, "absolute address (byte): %08lX\n", flash_ptr);
+        print(msg);
+        
+        HAL_FLASH_Lock();
+        return BL_WRITE_ERROR;
+      }
+    }
+     
+    if (FLASH->CR & (FLASH_FLAG_WRPERR | FLASH_FLAG_PGERR)) return BL_WRITE_ERROR;
+
+    HAL_FLASH_Lock();
+    return BL_OK;
+}
+
 /**
  * @brief  Program 64bit data into flash: this function writes an 8byte (64bit)
  *         data chunk into the flash and increments the data pointer.
@@ -230,6 +307,7 @@ uint8_t Bootloader_FlashEnd(void)
 {
     /* Lock flash */
     HAL_FLASH_Lock();
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_WRPERR | FLASH_FLAG_PGERR);
 
     return BL_OK;
 }

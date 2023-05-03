@@ -15,7 +15,7 @@
 
 #ifndef __BOOTLOADER_H
 #define __BOOTLOADER_H
-#include <stdint.h>
+#include "ff.h"
 
 /** Bootloader Configuration
  * @defgroup Bootloader_Configuration Bootloader Configuration
@@ -140,6 +140,7 @@ uint8_t Bootloader_Init(void);
 uint8_t Bootloader_Erase(void);
 
 uint8_t Bootloader_FlashBegin(void);
+uint8_t Bootloader_FlashNext_Buf(uint8_t *data, UINT count);
 uint8_t Bootloader_FlashNext(uint64_t data);
 uint8_t Bootloader_FlashEnd(void);
 
