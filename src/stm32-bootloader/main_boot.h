@@ -120,9 +120,6 @@ void Error_Handler_Boot(void);
 
 /* USER CODE BEGIN EFP */
 
-#define ELAPSED_TIME_TOTAL  Elapsed_Time_Total()
-#define ELAPSED_TIME_LAST   ELAPSED_TIME_TOTAL - Elapsed_time_last
-
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
