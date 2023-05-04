@@ -35,6 +35,17 @@ typedef void (*pFunction)(void); /*!< Function pointer definition */
 /** Private variable for tracking flashing progress */
 static uint32_t flash_ptr = APP_ADDRESS;
 
+// force the following unintialized variables into a seperate section so they don't get overwritten
+// when the reset routine zeroes out the bss section       
+uint32_t __attribute__((section("no_init"))) WRITE_Prot_Old_Flag;             // flag if protection was removed (in case need to restore write protection)
+uint32_t __attribute__((section("no_init"))) Write_Prot_Old;
+// back to normal
+uint32_t Magic_Location = Magic_BootLoader;  // flag to tell if to boot into bootloader or the application
+// provide method for assembly file to access #define values
+uint32_t MagicBootLoader = Magic_BootLoader;
+uint32_t MagicApplication = Magic_Application;
+uint32_t APP_ADDR = APP_ADDRESS;
+
 /**
  * @brief  This function initializes bootloader and flash.
  * @return Bootloader error code ::eBootloaderErrorCodes
@@ -367,22 +378,28 @@ uint8_t Bootloader_CheckForApplication(void)
  */
 void Bootloader_JumpToApplication(void)
 {
-    uint32_t JumpAddress = *(__IO uint32_t*)(APP_ADDRESS + 4);
-    pFunction Jump       = (pFunction)JumpAddress;
     
-    HAL_RCC_DeInit();
-    HAL_DeInit();
+  Magic_Location = Magic_Application;  // flag that we should load application 
+                                       // after the next reset
+  NVIC_SystemReset();                  // send the system through reset 
 
-    SysTick->CTRL = 0;
-    SysTick->LOAD = 0;
-    SysTick->VAL  = 0;
-
-#if(SET_VECTOR_TABLE)
-    SCB->VTOR = APP_ADDRESS;
-#endif
-
-    __set_MSP(*(__IO uint32_t*)APP_ADDRESS);
-    Jump();
+    
+//    uint32_t JumpAddress = *(__IO uint32_t*)(APP_ADDRESS + 4);
+//    pFunction Jump       = (pFunction)JumpAddress;
+//    
+//    HAL_RCC_DeInit();
+//    HAL_DeInit();
+//
+//    SysTick->CTRL = 0;
+//    SysTick->LOAD = 0;
+//    SysTick->VAL  = 0;
+//
+//#if(SET_VECTOR_TABLE)
+//    SCB->VTOR = APP_ADDRESS;
+//#endif
+//
+//    __set_MSP(*(__IO uint32_t*)APP_ADDRESS);
+//    Jump();
 }
 
 /**

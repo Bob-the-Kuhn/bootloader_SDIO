@@ -34,6 +34,11 @@
 /** Enable write protection after performing in-app-programming */
 #define USE_WRITE_PROTECTION 0
 
+/** Ignore write protection of application area (clear protection and write to FLASH) */
+#define IGNORE_WRITE_PROTECTION 1
+
+/** Restore write protection after performing in-app-programming */
+#define RESTORE_WRITE_PROTECTION 1                  
 /** Automatically set vector table location before launching application */
 #define SET_VECTOR_TABLE 1
 
@@ -143,5 +148,17 @@ void Bootloader_JumpToApplication(void);
 void Bootloader_JumpToSysMem(void);
 
 uint32_t Bootloader_GetVersion(void);
+
+extern uint32_t Magic_Location;
+#define Magic_BootLoader 0xB00720AD   //  semi random pattern to flag that next
+                                      //  reset should load the bootloader code
+#define Magic_Application 0xB0B1B0B2  //  semi random pattern to flag that next
+                                      //  reset should load the APPLICATION code
+
+extern uint32_t WRITE_protection;
+extern uint32_t WRITE_Prot_Old_Flag;             // flag if protection was removed (in case need to restore write protection)
+#define WRITE_Prot_Original_flag 0xB0B3B0B4
+#define WRITE_Prot_Old_Flag_Restored_flag 0xB0B5B0B6   // flag if protection was restored (to break an endless loop))
+extern uint32_t Write_Prot_Old;
 
 #endif /* __BOOTLOADER_H */
