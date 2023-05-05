@@ -35,6 +35,12 @@ typedef void (*pFunction)(void); /*!< Function pointer definition */
 /** Private variable for tracking flashing progress */
 static uint32_t flash_ptr = APP_ADDRESS;
 
+uint32_t Magic_Location = Magic_BootLoader;  // flag to tell if to boot into bootloader or the application
+// provide method for assembly file to access #define values
+uint32_t MagicBootLoader = Magic_BootLoader;
+uint32_t MagicApplication = Magic_Application;
+uint32_t APP_ADDR = APP_ADDRESS;
+
 /**
  * @brief  This function initializes bootloader and flash.
  * @return Bootloader error code ::eBootloaderErrorCodes
@@ -113,7 +119,15 @@ uint8_t Bootloader_Erase(void)
     HAL_FLASH_Unlock();  
     for (uint32_t i =  APP_first_sector; i <= LAST_SECTOR; i++) {
       kprint(" Erasing sector: %d\n",(uint16_t)i);
+//      __disable_irq();
       FLASH_Erase_Sector(i, VOLTAGE_RANGE_3);
+      while(FLASH->SR & FLASH_FLAG_BSY){};   // wait for completion
+ //     __enable_irq();
+      if (FLASH->SR) {
+        kprint(" FLASH status register: : %08lX\n",FLASH->SR);
+        __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGSERR );
+      }
+//      k_delay(100);
       /* Toggle green LED during erasing */
       LED_G1_TG();
     }
@@ -366,32 +380,37 @@ uint8_t Bootloader_CheckForApplication(void)
  */
 void Bootloader_JumpToApplication(void)
 {
-    uint32_t JumpAddress = *(__IO uint32_t*)(APP_ADDRESS + 4);
-    pFunction Jump       = (pFunction)JumpAddress;
-    
-    //char msg[64];
-    //print("JumpToApplication\n");
-    //sprintf(msg, "PC  : %08lX\n", *(__IO uint32_t*)(APP_ADDRESS + 4));
-    //print(msg);
-    //sprintf(msg, "SP  : %08lX\n", *(__IO uint32_t*)APP_ADDRESS);
-    //print(msg);
-    //sprintf(msg, "VTOR: %08lX\n", APP_ADDRESS);
-    //print(msg);
-    //k_delay(500);
-    
-    HAL_RCC_DeInit();
-    HAL_DeInit();
-
-    SysTick->CTRL = 0;
-    SysTick->LOAD = 0;
-    SysTick->VAL  = 0;
-
-#if(SET_VECTOR_TABLE)
-    SCB->VTOR = APP_ADDRESS;
-#endif
-
-    __set_MSP(*(__IO uint32_t*)APP_ADDRESS);
-    Jump();
+  
+  Magic_Location = Magic_Application;  // flag that we should load application 
+                                       // after the next reset
+  NVIC_SystemReset();                  // send the system through reset
+  
+//    uint32_t JumpAddress = *(__IO uint32_t*)(APP_ADDRESS + 4);
+//    pFunction Jump       = (pFunction)JumpAddress;
+//    
+//    //char msg[64];
+//    //print("JumpToApplication\n");
+//    //sprintf(msg, "PC  : %08lX\n", *(__IO uint32_t*)(APP_ADDRESS + 4));
+//    //print(msg);
+//    //sprintf(msg, "SP  : %08lX\n", *(__IO uint32_t*)APP_ADDRESS);
+//    //print(msg);
+//    //sprintf(msg, "VTOR: %08lX\n", APP_ADDRESS);
+//    //print(msg);
+//    //k_delay(500);
+//    
+//    HAL_RCC_DeInit();
+//    HAL_DeInit();
+//
+//    SysTick->CTRL = 0;
+//    SysTick->LOAD = 0;
+//    SysTick->VAL  = 0;
+//
+//#if(SET_VECTOR_TABLE)
+//    SCB->VTOR = APP_ADDRESS;
+//#endif
+//
+//    __set_MSP(*(__IO uint32_t*)APP_ADDRESS);
+//    Jump();
 }
 
 /**

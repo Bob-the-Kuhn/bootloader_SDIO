@@ -34,6 +34,11 @@
 /** Enable write protection after performing in-app-programming */
 #define USE_WRITE_PROTECTION 0
 
+/** Ignore write protection of application area (clear protection and write to FLASH) */
+#define IGNORE_WRITE_PROTECTION 1
+
+/** Restore write protection after performing in-app-programming */
+#define RESTORE_WRITE_PROTECTION 1                  
 /** Automatically set vector table location before launching application */
 #define SET_VECTOR_TABLE 1
 
@@ -46,7 +51,7 @@
 #define CLEAR_RESET_FLAGS 1
 
 /** Start address of application space in flash */
-#define APP_ADDRESS (uint32_t)0x08008000  
+#define APP_ADDRESS (uint32_t)0x08008000
 //#define APP_ADDRESS (uint32_t)0x08020000  // first available for EXFAT
 /** End address of application space (address of last byte) */
 #define END_ADDRESS (uint32_t)0x080FFFFB
@@ -143,5 +148,11 @@ void Bootloader_JumpToApplication(void);
 void Bootloader_JumpToSysMem(void);
 
 uint32_t Bootloader_GetVersion(void);
+
+extern uint32_t Magic_Location;
+#define Magic_BootLoader 0xB00720AD   //  semi random pattern to flag that next
+                                      //  reset should load the bootloader code
+#define Magic_Application 0xB0B1B0B2  //  semi random pattern to flag that next
+                                      //  reset should load the APPLICATION code
 
 #endif /* __BOOTLOADER_H */

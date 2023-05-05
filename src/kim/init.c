@@ -32,7 +32,7 @@ extern void main(void);
 
 void init(void);
 
-void isr_reset(void)
+void __attribute__ ((weak)) isr_reset(void)
 {
 	unsigned char *src, *dest;
 
