@@ -19,6 +19,7 @@
 #include <string.h>  // debug
 #include <stdio.h>   // debug
 #include <inttypes.h>  // debug
+
 void print(const char* str);   // debug
 void k_delay(const uint32_t ms);
 
@@ -35,12 +36,25 @@ typedef void (*pFunction)(void); /*!< Function pointer definition */
 /** Private variable for tracking flashing progress */
 static uint32_t flash_ptr = APP_ADDRESS;
 
+uint32_t APP_first_sector;  // first FLASH sector an application can be loaded into
+uint32_t APP_first_addr;    // beginning address of first FLASH sector an application can be loaded into
+uint32_t APP_sector_mask;   // mask used to determine if any application sectors are write protected
+                            // F407 mask is actually the first 12 bits in the upper word
+uint32_t WRITE_protection = 0xFFFFFFFF;  // default to removing write protection from all pages 
+// force the following unintialized variables into a seperate section so they don't get overwritten
+// when the reset routine zeroes out the bss section       
+uint32_t __attribute__((section("no_init"))) WRITE_Prot_Old_Flag;  // flag if protection was removed (in case need to restore write protection)
+uint32_t __attribute__((section("no_init"))) Write_Prot_Old;
+// back to normal                 
 uint32_t Magic_Location = Magic_BootLoader;  // flag to tell if to boot into bootloader or the application
 // provide method for assembly file to access #define values
 uint32_t MagicBootLoader = Magic_BootLoader;
 uint32_t MagicApplication = Magic_Application;
 uint32_t APP_ADDR = APP_ADDRESS;
 
+char msg[64];             
+
+void NVIC_System_Reset(void);
 /**
  * @brief  This function initializes bootloader and flash.
  * @return Bootloader error code ::eBootloaderErrorCodes
@@ -78,7 +92,7 @@ uint8_t Bootloader_Init(void)
     if (BOOT_LOADER_END <= 0x08000 + FLASH_BASE) {APP_first_sector = FLASH_SECTOR_2;   APP_first_addr = 0x08000 + FLASH_BASE;}
     if (BOOT_LOADER_END <= 0x04000 + FLASH_BASE) {APP_first_sector = FLASH_SECTOR_1;   APP_first_addr = 0x04000 + FLASH_BASE;}
     
-    char msg[64];
+    
     sprintf(msg, "\nBOOT_LOADER_END %08lX\n", BOOT_LOADER_END);
     print(msg);
     sprintf(msg, "Lowest possible APP_ADDRESS is %08lX\n", APP_first_addr);
@@ -101,6 +115,9 @@ uint8_t Bootloader_Init(void)
     for (uint8_t i = APP_first_sector; i <= LAST_SECTOR; i++) {  // generate mask of sectors we do NOT want write protected
       APP_sector_mask |= 1 << i;
     }
+    
+    //sprintf(msg, "APP_sector_mask: %08lX\n", APP_sector_mask);
+    //print(msg);
     
     return BL_OK;
 }
@@ -272,31 +289,92 @@ const char *byte_to_binary (uint32_t x)
  * @return Bootloader error code ::eBootloaderErrorCodes
  * @retval BL_OK: upon success
  * @retval BL_OBP_ERROR: upon failure
+ *
+ * Setting the protection is a five step process
+ *   1) Determine final proection
+ *   2) Disable protection on desired sectors
+ *   3) Enable protection on all other sectors
+ *   4) Invoke HAL_FLASH_OB_Launch()
+ *   5) Send the system through reset so that the new settings take effect
+ * 
  */
-uint8_t Bootloader_ConfigProtection(uint32_t protection)
-{
-    FLASH_OBProgramInitTypeDef OBStruct = {0};
-    HAL_StatusTypeDef status            = HAL_ERROR;
+uint8_t Bootloader_ConfigProtection(uint32_t protection, uint32_t mask, uint8_t save) {  
+  FLASH_OBProgramInitTypeDef OBStruct = {0};
+  HAL_StatusTypeDef status            = HAL_ERROR;
 
-    status = HAL_FLASH_Unlock();
-    status |= HAL_FLASH_OB_Unlock();
+  status = HAL_FLASH_Unlock();
+  status |= HAL_FLASH_OB_Unlock();
+  
+  HAL_FLASHEx_OBGetConfig(&OBStruct);  // get current FLASH config
+  
+  uint32_t WRPSector_save = OBStruct.WRPSector;
+  if (save) Write_Prot_Old = WRPSector_save;   // save current FLASH protect incase we do a restore later
     
-    HAL_FLASHEx_OBGetConfig(&OBStruct);  // get current FLASH config
+    uint32_t final_protection = (protection & mask) | (WRPSector_save & ~mask); // keep protection of bootloader area
     
-    OBStruct.WRPSector = protection;            // select affected sectors
+    //sprintf(msg,"\nsave flag: %0u\n", save);
+    //print(msg);
+    //sprintf(msg,"requested protection:  %08lX\n", protection);
+    //print(msg);
+    //
+    //sprintf(msg,"mask:                  %08lX\n", mask);
+    //print(msg);
+    //
+    //sprintf(msg,"final protection:      %08lX\n", final_protection);
+    //print(msg);
+    //
+    //sprintf(msg,"reported protection:   %08lX\n", WRPSector_save);
+    //print(msg);
+    
+    
+    if (save) {  // only removing write protection
+    
     OBStruct.WRPState = OB_WRPSTATE_DISABLE;    //  disable write protection
+    OBStruct.WRPSector = final_protection;            // select affected sectors
     status = HAL_FLASHEx_OBProgram(&OBStruct);  // write 
+    
+    //HAL_FLASHEx_OBGetConfig(&OBStruct);  // get current FLASH config
+    //sprintf(msg,"after disable:         %08lX\n", OBStruct.WRPSector);
+    //print(msg);
+    
+  }
+  else {
 
-    if(status == HAL_OK)
-    {
-        /* Loading Flash Option Bytes - this generates a system reset. */    // apparently not on a STM32F407
-        status |= HAL_FLASH_OB_Launch();
-    }
+    OBStruct.WRPState = OB_WRPSTATE_ENABLE;      //  enable write protection
+    OBStruct.WRPSector = ~final_protection;       // select affected sectors
+    status |= HAL_FLASHEx_OBProgram(&OBStruct);  // write 
+    
+    //HAL_FLASHEx_OBGetConfig(&OBStruct);  // get current FLASH config
+    //sprintf(msg,"after enable:          %08lX\n", OBStruct.WRPSector);
+    //print(msg);
+    
+  }
+  if(status == HAL_OK)
+  {
+    if (save) {
+      print("write protection removed\n");
+      WRITE_Prot_Old_Flag = WRITE_Prot_Original_flag;  // flag that protection was removed so can 
+    }  
+    else {
+      print("write protection restored\n");
+      WRITE_Prot_Old_Flag = WRITE_Prot_Old_Flag_Restored_flag;  // flag that protection was restored so won't 
+                                                                // try to save write protection after next reset)
+    }                                       
+      /* Loading Flash Option Bytes - this generates a system reset. */    // apparently not on a STM32F407
+      status |= HAL_FLASH_OB_Launch();        //  this is needed plus still need to go through reset  
+      
+      //HAL_FLASHEx_OBGetConfig(&OBStruct);  // get current FLASH config
+      //sprintf(msg,"after OB_Launch:       %08lX\n", OBStruct.WRPSector);
+      //print(msg);
+      
+      
+      NVIC_System_Reset();                  // send the system through reset so Flash Option Bytes get loaded
+  }
 
-    status |= HAL_FLASH_OB_Lock();
-    status |= HAL_FLASH_Lock();
+  status |= HAL_FLASH_OB_Lock();
+  status |= HAL_FLASH_Lock();
 
-    return (status == HAL_OK) ? BL_OK : BL_OBP_ERROR;
+  return (status == HAL_OK) ? BL_OK : BL_OBP_ERROR;
 }
 
 /**
@@ -383,7 +461,7 @@ void Bootloader_JumpToApplication(void)
   
   Magic_Location = Magic_Application;  // flag that we should load application 
                                        // after the next reset
-  NVIC_SystemReset();                  // send the system through reset
+  NVIC_System_Reset();                  // send the system through reset
   
 //    uint32_t JumpAddress = *(__IO uint32_t*)(APP_ADDRESS + 4);
 //    pFunction Jump       = (pFunction)JumpAddress;
@@ -424,24 +502,30 @@ void Bootloader_JumpToApplication(void)
  */
 void Bootloader_JumpToSysMem(void)
 {
-    uint32_t JumpAddress = *(__IO uint32_t*)(SYSMEM_ADDRESS + 4);
-    pFunction Jump       = (pFunction)JumpAddress;
+  Magic_Location = Magic_Application;  // flag that we should load application 
+                                       // after the next reset
+  NVIC_System_Reset();                  // send the system through reset
 
-    HAL_RCC_DeInit();
-    HAL_DeInit();
+  
+  
+  //uint32_t JumpAddress = *(__IO uint32_t*)(SYSMEM_ADDRESS + 4);
+  //pFunction Jump       = (pFunction)JumpAddress;
+  //
+  //HAL_RCC_DeInit();
+  //HAL_DeInit();
+  //
+  //SysTick->CTRL = 0;
+  //SysTick->LOAD = 0;
+  //SysTick->VAL  = 0;
+  //
+  //__HAL_RCC_SYSCFG_CLK_ENABLE();
+  //__HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+  //
+  //__set_MSP(*(__IO uint32_t*)SYSMEM_ADDRESS);
+  //Jump();
 
-    SysTick->CTRL = 0;
-    SysTick->LOAD = 0;
-    SysTick->VAL  = 0;
-
-    __HAL_RCC_SYSCFG_CLK_ENABLE();
-    __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
-
-    __set_MSP(*(__IO uint32_t*)SYSMEM_ADDRESS);
-    Jump();
-
-    while(1)
-        ;
+  //while(1)
+  //    ;
 }
 
 /**
@@ -459,4 +543,22 @@ uint32_t Bootloader_GetVersion(void)
     return ((BOOTLOADER_VERSION_MAJOR << 24) |
             (BOOTLOADER_VERSION_MINOR << 16) | (BOOTLOADER_VERSION_PATCH << 8) |
             (BOOTLOADER_VERSION_RC));
+}
+
+
+/**
+  \brief   System Reset
+  \details Initiates a system reset request to reset the MCU.
+ */
+void NVIC_System_Reset(void)
+{
+  #define SCB_AIRCR_VECTKEY_Pos 16U   /*!< SCB AIRCR: VECTKEY Position */
+  #define SCB_AIRCR_SYSRESETREQ_Pos 2U   /*!< SCB AIRCR: VECTKEY Position */
+  volatile uint32_t* SCB_AIRCR = (uint32_t*)0xE000ED0CUL;  
+
+*SCB_AIRCR = (uint32_t)(((0x5FAUL << SCB_AIRCR_VECTKEY_Pos) | (1 << SCB_AIRCR_SYSRESETREQ_Pos)));
+
+  for(;;)                                                           /* wait until reset */
+  {
+  }
 }

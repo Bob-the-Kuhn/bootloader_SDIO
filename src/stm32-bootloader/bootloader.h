@@ -15,6 +15,7 @@
 
 #ifndef __BOOTLOADER_H
 #define __BOOTLOADER_H
+#include "ff.h"                           
 
 /** Bootloader Configuration
  * @defgroup Bootloader_Configuration Bootloader Configuration
@@ -77,9 +78,9 @@
 #define APP_SIZE (uint32_t)(((END_ADDRESS - APP_ADDRESS) + 3) / 4)
 
 /** Number of sectors per bank in flash */
-uint32_t APP_first_sector;  // first FLASH sector an application can be loaded into
-uint32_t APP_first_addr;    // beginning address of first FLASH sector an application can be loaded into
-uint32_t APP_sector_mask;   // mask used to determine if any application sectors are write protected
+extern uint32_t APP_first_sector;  // first FLASH sector an application can be loaded into
+extern uint32_t APP_first_addr;    // beginning address of first FLASH sector an application can be loaded into
+extern uint32_t APP_sector_mask;   // mask used to determine if any application sectors are write protected
 #define APP_OFFSET (APP_ADDRESS - FLASH_BASE)  // how far from start of FLASH the APP starts
 //#define FLASH_SIZE            ((uint32_t)0x100000)  // 1024K bytes
 //#define FLASH_SIZE            ((uint32_t)0x100000)  // 1024K bytes
@@ -139,8 +140,7 @@ uint8_t Bootloader_FlashNext(uint64_t data);
 uint8_t Bootloader_FlashEnd(void);
 
 uint32_t Bootloader_GetProtectionStatus(void);
-uint8_t Bootloader_ConfigProtection(uint32_t protection);
-
+uint8_t Bootloader_ConfigProtection(uint32_t protection, uint32_t mask, uint8_t save);
 uint8_t Bootloader_CheckSize(uint32_t appsize);
 uint8_t Bootloader_VerifyChecksum(void);
 uint8_t Bootloader_CheckForApplication(void);
@@ -155,4 +155,13 @@ extern uint32_t Magic_Location;
 #define Magic_Application 0xB0B1B0B2  //  semi random pattern to flag that next
                                       //  reset should load the APPLICATION code
 
+extern uint32_t WRITE_protection;
+extern uint32_t WRITE_Prot_Old_Flag;             // flag if protection was removed (in case need to restore write protection)
+#define WRITE_Prot_Original_flag 0xB0B3B0B4
+#define WRITE_Prot_Old_Flag_Restored_flag 0xB0B5B0B6   // flag if protection was restored (to break an endless loop))
+extern uint32_t Write_Prot_Old;
+
+
+#define WP_DONT_SAVE 0
+#define WP_SAVE 1   
 #endif /* __BOOTLOADER_H */

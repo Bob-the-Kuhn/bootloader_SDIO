@@ -60,6 +60,8 @@ void Error_Handler(void);
 
 /* Hardware Defines ----------------------------------------------------------*/
                           
+// BTT SKR PRO has only one LED at PA7
+// The 407 black board has two at PA6 and PA7
 
 //#define WORK_LED_Pin GPIO_PIN_2
 //#define WORK_LED_GPIO_Port GPIOB

@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "bootloader.h"                       
 #include "ff.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -69,6 +70,7 @@ void k_delay(const uint32_t ms);
 
 #define PGM_READ_WORD(x) *(x)
 
+ char msg[64];            
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -222,12 +224,9 @@ static void main_boot(void)
     
     print("Launching Application.\n");
     LED_G1_ON();
-    k_delay(200);
-    LED_G1_OFF();
     LED_G2_ON();
-    k_delay(200);
-    LED_G2_OFF();
-    k_delay(1000);
+    
+    WRITE_Prot_Old_Flag = 0;  //  set "restore write protect" state machine back to unitialized
     
     /* De-initialize bootloader hardware & peripherals */
     //        SD_DeInit();
@@ -267,9 +266,8 @@ uint8_t Enter_Bootloader(void)
   uint8_t status;
   uint64_t data;
   uint32_t cntr;
-  uint32_t addr;
+  //uint32_t addr;
   char SDPath[4] = {0x00};   /* SD logical drive path */
-  char msg[40] = {0x00};
   
   /* Mount SD card */
   fr = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
@@ -314,30 +312,53 @@ uint8_t Enter_Bootloader(void)
   
   
   /* Check for flash write protection of application area*/
-  if(~Bootloader_GetProtectionStatus() & APP_sector_mask) {
+  if(~Bootloader_GetProtectionStatus() & WRITE_protection & APP_sector_mask) {  // F407 high bit says sector is protected
     print("Application space in flash is write protected.\n");
-    //        print("Press button to disable flash write protection...\n");
-    //        LED_ALL_ON();
-    //        for(i = 0; i < 100; ++i)
-    //        {
-    //            LED_ALL_TG();
-    //            k_delay(50);
-    //            if(IS_BTN_PRESSED())
-    //            {
-    //                print("Disabling write protection and generating system "
-    //                      "reset...\n");
-    //                Bootloader_ConfigProtection(BL_PROTECTION_NONE);
-    //            }
-    //        }
-    //        LED_ALL_OFF();
-    //        print("Button was not pressed, write protection is still active.\n");
-    //        print("Disabling write protection and generating system reset...\n");  // apparently not on a STM32F107
-    Bootloader_ConfigProtection(APP_sector_mask);
-    //        print("Exiting Bootloader.\n");
-    print("write protection removed\n");
-    //        return ERR_WRP_ACTIVE;
+    if (IGNORE_WRITE_PROTECTION) {                              
+      //        print("Press button to disable flash write protection...\n");
+      //        LED_ALL_ON();
+      //        for(i = 0; i < 100; ++i)
+      //        {
+      //            LED_ALL_TG();
+      //            k_delay(50);
+      //            if(IS_BTN_PRESSED())
+      //            {
+      //                print("Disabling write protection and generating system "
+      //                      "reset...\n");
+      //                Bootloader_ConfigProtection(BL_PROTECTION_NONE);
+      //            }
+      //        }
+      //        LED_ALL_OFF();
+      //        print("Button was not pressed, write protection is still active.\n");
+      if (!(WRITE_Prot_Old_Flag == WRITE_Prot_Old_Flag_Restored_flag)) {   // already restored original protection so don't initiate the process again                             
+      print("Disabling write protection and generating system reset...\n"); 
+      /* Eject SD card */
+      SD_Eject();
+      Magic_Location = Magic_BootLoader;  // flag that we should load the bootloader
+                                          // after the next reset
+      if (Bootloader_ConfigProtection(WRITE_protection, APP_sector_mask, WP_SAVE) != BL_OK)   // sends system though reset - no more code executed unless there's an error 
+        {
+          print("Failed to set write protection.\n");
+          print("Exiting Bootloader.\n");
+          return ERR_OK;
+        }
+
+        print("write protection removed\n");
+
+        WRITE_Prot_Old_Flag = WRITE_Prot_Original_flag;  // flag that protection was removed so can
+                                                       // restore write protection after next reset)
+
+        Magic_Location = Magic_BootLoader;  // flag that we should load the bootloader
+                                            // after the next reset
+        // NVIC_System_Reset();  // send system through reset
+      }
+      else {
+        return ERR_OK;  // already programmed FLASH & protection restored so it's time to launch the application
+      }
+        
+    }
   }
-  
+ 
   /* Step 2: Erase Flash */
   print("Erasing flash...\n");
   LED_G2_ON();
@@ -403,6 +424,9 @@ uint8_t Enter_Bootloader(void)
   sprintf(msg, "Flashed: %ld bytes.\n", (cntr * 4));
   print(msg);
   
+  
+#if 0  // adds 25-26 seconds but doesn't add any value (verify during programming only costs 60mS)  
+  /* Step 5: Verify Flash Content */  
   /* Open file for verification */
   fr = f_open(&SDFile, CONF_FILENAME, FA_READ);
   if(fr != FR_OK)
@@ -417,7 +441,6 @@ uint8_t Enter_Bootloader(void)
     return ERR_SD_FILE;
   }
   
-  /* Step 5: Verify Flash Content */
   print("Verifying ...\n");
   addr = APP_ADDRESS;
   cntr = 0;
@@ -451,32 +474,47 @@ uint8_t Enter_Bootloader(void)
       LED_G1_TG();
     }
   } while((fr == FR_OK) && (num > 0));
-  f_close(&SDFile);
+
   print("Verification passed.\n");
+  f_close(&SDFile);
+#endif          
+                   
   LED_G1_OFF();
   
   #if defined(FILE_EXT_CHANGE) && (_LFN_UNICODE == 0)   // rename file if using ANSI/OEM strings
     TCHAR new_filename[strlen(CONF_FILENAME) + 1];
+    new_filename[strlen(CONF_FILENAME)] = '\0';  // terminate the string
     strncpy(new_filename, PGM_READ_WORD(&(CONF_FILENAME)), strlen(CONF_FILENAME) );  // copy FLASH into ram
     for (int x = 0; x < strlen(CONF_FILENAME); x++)  // convert to upper case
       new_filename[x] = toupper(new_filename[x]);
     char * pos = strrchr(new_filename, '.') + 1;  // find start of extension
     strncpy(pos, PGM_READ_WORD(&(FILE_EXT_CHANGE)), strlen(FILE_EXT_CHANGE) );  // copy FLASH into ram
-    *(pos + strlen(FILE_EXT_CHANGE)) = '\0';  // terminate the string
     
     fr = f_unlink (new_filename); // if file already exists - delete it
     
-    fr = f_rename(CONF_FILENAME, new_filename);  // rename file to .CUR
-    if(fr != FR_OK)
-    {
-      /* f_open failed */
-      print("File cannot be renamed.\n");
+    
+    if ((fr == FR_OK) || (fr == FR_NO_FILE)) {
+      fr = f_rename(CONF_FILENAME, new_filename);  // rename file to .CUR
+                                                                       if (fr != FR_OK)  
+      {
+        /* f_open failed */
+        print("File cannot be renamed.\n");
+        kprint("FatFs error code: %u\n", fr);
+        //print(msg);
+        
+        //SD_Eject();               // allow loading application even if can't rename
+        Magic_Location = Magic_Application;  // flag that we should load application
+                                             // after the next reset
+      }
+    }
+    else {
+    /* f_open failed */
+      print("removing .CUR failed.\n");
       kprint("FatFs error code: %u\n", fr);
-    //print(msg);
-      
-      //SD_Eject();               // allow loading application even if can't rename
-      //print("SD ejected.\n");
-      //return ERR_SD_FILE;       
+
+      // allow loading application even if can't rename
+      Magic_Location = Magic_Application;  // flag that we should load application
+                                           // after the next reset
     }
   #endif
   
@@ -484,13 +522,27 @@ uint8_t Enter_Bootloader(void)
   SD_Eject();
   print("SD ejected.\n");
   
-  /* Enable flash write protection */
-  #if(USE_WRITE_PROTECTION)
+  /* Enable flash write protection on application area */
+#if(USE_WRITE_PROTECTION && !RESTORE_WRITE_PROTECTION)
     print("Enabling flash write protection and generating system reset...\n");
-    if(Bootloader_ConfigProtection(BL_PROTECTION_WRP) != BL_OK)
+    if(Bootloader_ConfigProtection(BL_PROTECTION_WRP, APP_sector_mask, WP_DONT_SAVE) != BL_OK)   // sends system though reset - no more code executed unless there's an error
     {
       print("Failed to enable write protection.\n");
-      print("Exiting Bootloader.\n");
+
+    }
+  #endif
+
+  /* Restore flash write protection */
+  #if(!USE_WRITE_PROTECTION && RESTORE_WRITE_PROTECTION && IGNORE_WRITE_PROTECTION)
+    if (WRITE_Prot_Old_Flag == WRITE_Prot_Original_flag) {
+      WRITE_Prot_Old_Flag = WRITE_Prot_Old_Flag_Restored_flag;  // indicate we've restored the protection
+      print("Restoring flash write protection and generating system reset...\n");
+      //print("  May require power cycle to recover.\n");
+
+      if (Bootloader_ConfigProtection(Write_Prot_Old, APP_sector_mask, WP_DONT_SAVE) != BL_OK)  // sends system though reset - no more code executed unless there's an error
+      {
+        print("Failed to restore write protection.\n");
+      }
     }
   #endif
   

@@ -79,7 +79,7 @@
   .cpu cortex-m4
   .fpu softvfp
   .thumb
-
+                    
 
 /* start address for the initialization values of the .data section. 
 defined in linker script */
@@ -113,7 +113,11 @@ isr_reset:
       LDR R0, = 0                  //  default to boot application
       LDR R1, = Magic_Location
       LDR R1, [R1, #0]                  // read magic value
+      CMP R1, #0
+      BEQ SKIP                          // if 0 then have not yet been through the bootloader
       LDR R2, = MagicApplication
+      CMP R1, #0
+      BEQ SKIP                          // if 0 then have not yet been through the bootloader
       LDR R2, [R2, #0]
       CMP R1, R2
       BNE SKIP                     
