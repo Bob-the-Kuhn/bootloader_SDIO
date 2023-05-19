@@ -1,7 +1,7 @@
 /* USER CODE BEGIN Header */
 /**
  ******************************************************************************
-  * @file    bsp_driver_sd.h for F4 (based on stm324x9i_eval_sd.h)
+  * @file    bsp_driver_sd.h (based on stm32756g_eval_sd.h)
   * @brief   This file contains the common defines and functions prototypes for
   *          the bsp_driver_sd.c driver.
   ******************************************************************************
@@ -17,16 +17,17 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
+
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F4_SD_H
-#define __STM32F4_SD_H
+#ifndef __STM32F7_SD_H
+#define __STM32F7_SD_H
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal.h"
+#include "stm32f7xx_hal.h"
 #include "fatfs_platform.h"
 
 /* Exported types --------------------------------------------------------*/
@@ -41,6 +42,7 @@
   */
 #define   MSD_OK                        ((uint8_t)0x00)
 #define   MSD_ERROR                     ((uint8_t)0x01)
+#define   MSD_ERROR_SD_NOT_PRESENT      ((uint8_t)0x02)
 
 /**
   * @brief  SD transfer state definition
@@ -50,15 +52,7 @@
 
 #define SD_PRESENT               ((uint8_t)0x01)
 #define SD_NOT_PRESENT           ((uint8_t)0x00)
-
-
-#ifdef SDMMC_DATATIMEOUT    // don't let libraries inadvertently define SD_TIMEOUT value
-  #undef SDMMC_DATATIMEOUT
-#endif
-#ifdef SD_DATATIMEOUT
-  #undef SD_DATATIMEOUT
-#endif
-//#define SD_DATATIMEOUT           ((uint32_t)100000000)
+#define SD_DATATIMEOUT           ((uint32_t)100000000)
 
 #ifdef OLD_API
 /* kept to avoid issue when migrating old projects. */
@@ -67,21 +61,17 @@
 /* USER CODE END 0 */
 #else
 /* USER CODE BEGIN BSP_H_CODE */
+
 /* Exported functions --------------------------------------------------------*/
 uint8_t BSP_SD_Init(void);
 uint8_t BSP_SD_ITConfig(void);
-void    BSP_SD_DetectIT(void);
-void    BSP_SD_DetectCallback(void);
 uint8_t BSP_SD_ReadBlocks(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks, uint32_t Timeout);
 uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks, uint32_t Timeout);
 uint8_t BSP_SD_ReadBlocks_DMA(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks);
 uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks);
 uint8_t BSP_SD_Erase(uint32_t StartAddr, uint32_t EndAddr);
-void BSP_SD_IRQHandler(void);
-void BSP_SD_DMA_Tx_IRQHandler(void);
-void BSP_SD_DMA_Rx_IRQHandler(void);
 uint8_t BSP_SD_GetCardState(void);
-void    BSP_SD_GetCardInfo(HAL_SD_CardInfoTypeDef *CardInfo);
+void    BSP_SD_GetCardInfo(BSP_SD_CardInfo *CardInfo);
 uint8_t BSP_SD_IsDetected(void);
 
 /* These functions can be modified in case the current settings (e.g. DMA stream)
@@ -96,4 +86,4 @@ void    BSP_SD_ReadCpltCallback(void);
 }
 #endif
 
-#endif /* __STM32F4_SD_H */
+#endif /* __STM32F7_SD_H */

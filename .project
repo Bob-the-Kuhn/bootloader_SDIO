@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>STM32F407VET6_SDIO_bootloader</name>
+	<name>nucleo_F746</name>
 	<comment></comment>
 	<projects>
 	</projects>

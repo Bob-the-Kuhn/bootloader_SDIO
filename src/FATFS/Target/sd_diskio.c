@@ -32,11 +32,11 @@
 /* Private define ------------------------------------------------------------*/
 /* use the default SD timout as defined in the platform BSP driver*/
 #if defined(SDMMC_DATATIMEOUT)
-  #define SD_TIMEOUT SDMMC_DATATIMEOUT
+#define SD_TIMEOUT SDMMC_DATATIMEOUT
 #elif defined(SD_DATATIMEOUT)
-  #define SD_TIMEOUT SD_DATATIMEOUT
+#define SD_TIMEOUT SD_DATATIMEOUT
 #else
-  #define SD_TIMEOUT 30    // 30 ticks (ms)
+#define SD_TIMEOUT 30 * 1000
 #endif
 
 #define SD_DEFAULT_BLOCK_SIZE 512
@@ -48,7 +48,7 @@
  * BSP_SD_Init() elsewhere in the application.
  */
 /* USER CODE BEGIN disableSDInit */
-//#define DISABLE_SD_INIT
+/* #define DISABLE_SD_INIT */
 /* USER CODE END disableSDInit */
 
 /* Private variables ---------------------------------------------------------*/
