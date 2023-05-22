@@ -93,14 +93,27 @@ extern uint32_t APP_sector_mask;   // mask used to determine if any application 
 #define FLASH_SECTOR_SIZE       ((uint32_t)0x4000)  // 16K bytes
 //#define FLASH_BASE            ((uint32_t)0x08000000) // FLASH(up to 1 MB) base address in the alias region
 //#define SRAM1_BASE            ((uint32_t)0x20000000) // SRAM1(112 KB) base address in the alias region
-#define SRAM1_SIZE_MAX        ((uint32_t)0x1BFFF)
-//#define SRAM2_BASE            ((uint32_t)0x2001C000) // SRAM2(16 KB) base address in the alias region  
-#define SRAM2_SIZE_MAX        ((uint32_t)0x03FFF)
-//#define PERIPH_BASE           ((uint32_t)0x40000000) // Peripheral base address in the alias region    
 
-//#define FLASH_FLAG_ALL_ERRORS     (FLASH_FLAG_OPERR   | FLASH_FLAG_WRPERR | \
-//                                   FLASH_FLAG_PGAERR  | FLASH_FLAG_PGSERR | \
-//                                   FLASH_FLAG_PGPERR )
+
+//#define SRAM1_SIZE_MAX        ((uint32_t)0x1BFFF)
+//#define SRAM2_BASE            ((uint32_t)0x2001C000) // SRAM2(16 KB) base address in the alias region  
+//#define SRAM2_SIZE_MAX        ((uint32_t)0x03FFF)
+
+#ifndef SRAM1_BASE
+	#define SRAM1_BASE            ((uint32_t)0x20010000) // F746ZG SRAM1(240 KB) base address in the alias region
+#endif 
+#ifndef SRAM1_SIZE_MAX
+	#define SRAM1_SIZE_MAX       ((uint32_t)   0x3BFFF) // F746ZG
+#endif 
+#ifndef SRAM2_BASE
+  #define SRAM2_BASE            ((uint32_t)0x2004C000) // F746ZG SRAM2(16 KB) base address in the alias region  
+#endif 
+#ifndef SRAM2_SIZE_MAX
+	#define SRAM2_SIZE_MAX        ((uint32_t)   0x03FFF) // 
+#endif
+#ifndef PERIPH_BASE
+    #define PERIPH_BASE           ((uint32_t)0x40000000) // Peripheral base address in the alias region    
+#endif
 
 /* MCU RAM information (to check whether flash contains valid application) */
 #define RAM_BASE SRAM1_BASE     /*!< Start address of RAM */

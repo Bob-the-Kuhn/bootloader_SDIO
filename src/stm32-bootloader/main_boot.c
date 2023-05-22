@@ -106,9 +106,12 @@ void main_boot_init(void)
   LED_G1_OFF();
   LED_G2_OFF();             
 
-  sprintf(msg, "\nSYSCLK_Frequency %08lu\n", HAL_RCC_GetSysClockFreq());
+  sprintf(msg, "\nSYSCLK_Frequency %09lu\n", HAL_RCC_GetSysClockFreq());
   print(msg);
-  sprintf(msg, "HCLK_Frequency   %08lu\n", HAL_RCC_GetHCLKFreq());
+  sprintf(msg, "HCLK_Frequency   %09lu\n", HAL_RCC_GetHCLKFreq());
+  print(msg);
+  
+  sprintf(msg, "\ncurrent protection: %08lX\n", Bootloader_GetProtectionStatus());
   print(msg);
 
   //print("debug test\n");  
@@ -118,6 +121,7 @@ void main_boot_init(void)
 
   /* USER CODE BEGIN 2 */
   
+
   main_boot();             
   /* USER CODE END 2 */
   
@@ -126,6 +130,7 @@ void main_boot_init(void)
   
   while (1)
   {
+	  
     /* USER CODE END WHILE */
     
     /* USER CODE BEGIN 3 */
@@ -311,7 +316,6 @@ uint8_t Enter_Bootloader(void)
   
   /* Step 1: Init Bootloader and Flash */
   
-  
   /* Check for flash write protection of application area*/
   if(~Bootloader_GetProtectionStatus() & WRITE_protection & APP_sector_mask) {  // F407 high bit says sector is protected
     print("Application space in flash is write protected.\n");
@@ -359,7 +363,7 @@ uint8_t Enter_Bootloader(void)
         
     }
   }
- 
+
   /* Step 2: Erase Flash */
   print("Erasing flash...\n");
   LED_G2_ON();
@@ -398,7 +402,7 @@ uint8_t Enter_Bootloader(void)
       else
       {
         //                kprint("Programming error at: %lu byte\n", (cntr * 8));
-        sprintf(msg, "  offset in file (byte):   %08lX\n", (cntr * 4));
+        sprintf(msg, "Programming error at offset in file (byte):   %08lX\n", (cntr * 4));
         print(msg);
         
         f_close(&SDFile);
@@ -433,7 +437,7 @@ uint8_t Enter_Bootloader(void)
   {
     /* f_open failed */
     print("File cannot be opened.\n");
-    sprintf("FatFs error code: %d\n", (const char *)fr);
+    sprintf(msg, "FatFs error code: %d\n", (const char *)fr);
     print(msg);
     
     SD_Eject();
@@ -457,7 +461,7 @@ uint8_t Enter_Bootloader(void)
       }
       else
       {
-        sprintf("Verification error at: %lu byte.\n", (cntr * 4));
+        sprintf(msg, "Verification error at: %lu byte.\n", (cntr * 4));
         print(msg);
         
         f_close(&SDFile);
@@ -499,7 +503,7 @@ uint8_t Enter_Bootloader(void)
       {
         /* f_open failed */
         print("File cannot be renamed.\n");
-        sprintf("FatFs error code: %d\n", (const char *)fr);
+        sprintf(msg, "FatFs error code: %s\n", (const char *)fr);
         print(msg);
         
         //SD_Eject();               // allow loading application even if can't rename
@@ -510,9 +514,9 @@ uint8_t Enter_Bootloader(void)
     else {
     /* f_open failed */
       print("removing .CUR failed.\n");
-      sprintf("FatFs error code: %d\n", (const char *)fr);
-	  print(msg);
-
+      sprintf(msg, "FatFs error code: %s\n", (const char *)fr);
+      print(msg);
+ 
       // allow loading application even if can't rename
       Magic_Location = Magic_Application;  // flag that we should load application
                                            // after the next reset

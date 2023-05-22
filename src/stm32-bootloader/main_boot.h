@@ -136,6 +136,14 @@ void Error_Handler(void);
 #define Detect_SD_Pin GPIO_PIN_2
 #define Detect_SD_GPIO_Port GPIOG
 
+#define SD_PRESENT               ((uint8_t)0x01)  /* also in bsp_driver_sd.h */
+#define SD_NOT_PRESENT           ((uint8_t)0x00)  /* also in bsp_driver_sd.h */
+#define SD_DETECT_PIN         Detect_SD_Pin
+#define SD_DETECT_GPIO_PORT   Detect_SD_GPIO_Port
+
+#define SD_TIMEOUT 300   // how long to wait for a SD operation
+
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

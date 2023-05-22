@@ -27,16 +27,20 @@
 /* Includes ------------------------------------------------------------------*/
 #include "ff_gen_drv.h"
 #include "sd_diskio.h"
+#include "main_boot.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* use the default SD timout as defined in the platform BSP driver*/
+
+#ifndef SD_TIMEOUT
 #if defined(SDMMC_DATATIMEOUT)
 #define SD_TIMEOUT SDMMC_DATATIMEOUT
 #elif defined(SD_DATATIMEOUT)
 #define SD_TIMEOUT SD_DATATIMEOUT
 #else
 #define SD_TIMEOUT 30 * 1000
+#endif
 #endif
 
 #define SD_DEFAULT_BLOCK_SIZE 512
