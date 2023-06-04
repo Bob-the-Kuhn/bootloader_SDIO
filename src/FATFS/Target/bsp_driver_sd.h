@@ -50,8 +50,12 @@
 #define   SD_TRANSFER_OK                ((uint8_t)0x00)
 #define   SD_TRANSFER_BUSY              ((uint8_t)0x01)
 
-#define SD_PRESENT               ((uint8_t)0x01)
-#define SD_NOT_PRESENT           ((uint8_t)0x00)
+#ifndef SD_PRESENT
+  #define SD_PRESENT               ((uint8_t)0x01)
+#endif
+#ifndef SD_NOT_PRESENT
+  #define SD_NOT_PRESENT           ((uint8_t)0x00)
+#endif
 #define SD_DATATIMEOUT           ((uint32_t)100000000)
 
 #ifdef OLD_API

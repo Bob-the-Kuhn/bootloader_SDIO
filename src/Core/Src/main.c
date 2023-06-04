@@ -83,7 +83,7 @@ void print(const char* str)
   * @brief  The application entry point.
   * @retval none
   */
-void main(void)
+int main(void)
 {
   /* USER CODE BEGIN 1 */
 
@@ -125,6 +125,8 @@ void main(void)
 
     /* USER CODE BEGIN 3 */
   }
+  
+  return 1;
   /* USER CODE END 3 */
 }
 
