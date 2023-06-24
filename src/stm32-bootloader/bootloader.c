@@ -37,10 +37,10 @@ typedef void (*pFunction)(void); /*!< Function pointer definition */
 /* Private variables ---------------------------------------------------------*/
 /** Private variable for tracking flashing progress */
 static uint32_t flash_ptr = APP_ADDRESS;
-uint16_t APP_first_sector = 0;
-uint32_t APP_first_addr = 0;
+uint16_t APP_first_sector = 0; // first FLASH sector an application can be loaded into
+uint32_t APP_first_addr = 0;  // beginning address of first FLASH sector an application can be loaded into
 uint32_t APP_sector_mask = 0xFFFFFFFF;  // mask to not affect bootloader sectors,  defaults to removing write protection from all pages 
-
+uint32_t WRITE_protection = 0xFFFFFFFF;  // default to removing write protection from all pages 
 // force the following unintialized variables into a seperate section so they don't get overwritten
 // when the reset routine zeroes out the bss section       
 uint32_t __attribute__((section("no_init"))) WRITE_Prot_Old_Flag;             // flag if protection was removed (in case need to restore write protection)
@@ -363,6 +363,25 @@ const char *byte_to_binary (uint32_t x)
     return b;
 }
 
+
+/********************************************************************
+ * The following code is based on ST's STM32 library.
+ * 
+ * It has been modified so that setting and clearing the write protect
+ * option bits is done in a single pass.
+ * 
+ * Process overview:
+ *   1) save existing DATA and USER bytes
+ *   2) erase option bytes
+ *        This routine saves & restores the RDP byte.
+ *   3) restore the DATA and USER bytes
+ *   4) program the WRP bytes
+ * 
+ *  It does NOT save the compliments of the bytes.
+ * 
+ */
+
+
 static HAL_StatusTypeDef FLASH_OB_ProgramOB_byte(uint32_t Address, uint8_t Data)
 {
   HAL_StatusTypeDef status = HAL_ERROR;
@@ -392,8 +411,8 @@ static HAL_StatusTypeDef FLASH_OB_ProgramOB_byte(uint32_t Address, uint8_t Data)
  
 HAL_StatusTypeDef _HAL_FLASHEx_OBProgram_WRP(uint32_t WRP_bits) { 
   
-  sprintf(msg,"WRP_bits               %08lX\n", WRP_bits);
-  print(msg);
+//  sprintf(msg,"WRP_bits               %08lX\n", WRP_bits);
+//  print(msg);
   
   
   HAL_StatusTypeDef status = HAL_OK;
@@ -419,12 +438,37 @@ HAL_StatusTypeDef _HAL_FLASHEx_OBProgram_WRP(uint32_t WRP_bits) {
 
   status |= FLASH_WaitForLastOperation((uint32_t)FLASH_TIMEOUT_VALUE);
   
+  if (status != HAL_OK) {
+    print("FLASH_TIMEOUT error\n"); 
+    // goto QUIT;  // try to restore the OB block no matter what
+  }
+  
+ 
+  if(FLASH->CR & 1) {
+    FLASH->CR &= 0xFFFFFFFE;  // clear out the PE bit
+  }
+  
   status |= HAL_FLASHEx_OBErase();  // erase OB block
+  
+  if (status != HAL_OK) {
+    print("erase OB block error\n"); 
+//    FLASH_WaitForLastOperation((uint32_t)FLASH_TIMEOUT_VALUE);
+//    status = HAL_FLASHEx_OBErase();  // erase OB block
+//    if (status != HAL_OK) {
+//      print("erase OB block error 2\n");
+//    }
+//    else {
+//      status = HAL_OK;
+//    }
+//    
+    // goto QUIT;  // try to restore the OB block no matter what
+  }
+  
   status |= FLASH_WaitForLastOperation((uint32_t)FLASH_TIMEOUT_VALUE);
   
   
   if (status != HAL_OK) {
-    print("erase error\n"); 
+    print("WaitForLastOperation error\n"); 
     sprintf(msg,"erase error - HAL status:          %02X\n", status);
     print(msg);
     sprintf(msg,"FLASH status register:          %08lX\n", FLASH->SR);
@@ -432,7 +476,7 @@ HAL_StatusTypeDef _HAL_FLASHEx_OBProgram_WRP(uint32_t WRP_bits) {
     // goto QUIT;  // try to restore the OB block no matter what
   }   
   
-  uint32_t timeout;
+  uint32_t timeout = FLASH_TIMEOUT_VALUE;
 
   status |= FLASH_OB_ProgramOB_byte(0x1FFFF802, USER);
   status |= FLASH_WaitForLastOperation((uint32_t)FLASH_TIMEOUT_VALUE);
@@ -472,16 +516,16 @@ HAL_StatusTypeDef _HAL_FLASHEx_OBProgram_WRP(uint32_t WRP_bits) {
   if (status != HAL_OK) print("lock error\n");
   
   ////uint8_t _RDP   = *OB_BLOCK;
-  uint8_t _USER  = *(OB_BLOCK + 2);
-  uint8_t _Data0 = *(OB_BLOCK + 4);
-  uint8_t _Data1 = *(OB_BLOCK + 6);
-  uint8_t _WRP0  = *(OB_BLOCK + 8);
-  uint8_t _WRP1  = *(OB_BLOCK + 10);
-  uint8_t _WRP2  = *(OB_BLOCK + 12);
-  uint8_t _WRP3  = *(OB_BLOCK + 14);
+  //uint8_t _USER  = *(OB_BLOCK + 2);
+  //uint8_t _Data0 = *(OB_BLOCK + 4);
+  //uint8_t _Data1 = *(OB_BLOCK + 6);
+  //uint8_t _WRP0  = *(OB_BLOCK + 8);
+  //uint8_t _WRP1  = *(OB_BLOCK + 10);
+  //uint8_t _WRP2  = *(OB_BLOCK + 12);
+  //uint8_t _WRP3  = *(OB_BLOCK + 14);
   
-  sprintf(msg,"WRP read back          %02X%02X%02X%02X\n", _WRP3, _WRP2, _WRP1, _WRP0);
-  print(msg);
+  //sprintf(msg,"WRP read back          %02X%02X%02X%02X\n", _WRP3, _WRP2, _WRP1, _WRP0);
+  //print(msg);
   
   //////if (RDP   != _RDP)   while(1){};
   //if (USER  != _USER)  FLASH_OB_ProgramOB_byte(0x1FFFF802, USER);
@@ -513,23 +557,17 @@ HAL_StatusTypeDef _HAL_FLASHEx_OBProgram_WRP(uint32_t WRP_bits) {
 /**
  * @brief  This function configures the write protection of flash.
  * @param  protection: desired protection: '1' - no protection, '0' write protect
+ *         mask: '1' - program per protection , '0' don't touch this bit
+ *         set: unused
  * @return Bootloader error code ::eBootloaderErrorCodes
  * @retval BL_OK: upon success
  * @retval BL_OBP_ERROR: upon failure
  *
- * ?? OB_WRPSTATE_DISABLE:  '0' in WRPPage bit disables write protection
- * ?? OB_WRPSTATE_ENABLE:   '1' in WRPPage bit enables write protection
- * ??   Can't do both operations back to back - must go through reset between 
- * ?? 
- * ?? NOTE: After issuing a HAL_FLASHEx_OBProgram command, subsequent  
- * ??       HAL_FLASHEx_OBGetConfig commands return garbage.
- *
- * ?? Setting the protection is a five step process
- * ??   1) Determine final protection
- * ??   2) Disable protection on desired sectors
- * ??   3) Enable protection on all other sectors
- * ??   4) Invoke HAL_FLASH_OB_Launch()
- * ??   5) Send the system through reset so that the new settings take effect
+ * 
+ * Setting the protection is a three step process
+ *   1) Determine final protection
+ *   2) Invoke _HAL_FLASH_OB_Launch()
+ *   3) Send the system through reset so that the new settings take effect
  * 
  */
 
@@ -541,74 +579,34 @@ uint8_t Bootloader_ConfigProtection(uint32_t protection, uint32_t mask, uint8_t 
   status = HAL_FLASH_Unlock();
   status |= HAL_FLASH_OB_Unlock();
   
-  sprintf(msg,"requested protection:  %08lX\n", protection);
-  print(msg);
-  
-  sprintf(msg,"mask:                  %08lX\n", mask);
-  print(msg);
+  //sprintf(msg,"requested protection:  %08lX\n", protection);
+  //print(msg);
+  //
+  //sprintf(msg,"mask:                  %08lX\n", mask);
+  //print(msg);
   
   HAL_FLASHEx_OBGetConfig(&OBStruct);  // get current FLASH config
   uint32_t WRPSector_save = OBStruct.WRPPage;
-  uint32_t clear_protection = ~(protection & mask); // don't touch protection of bootloader area
-  uint32_t set_protection = ~protection & mask; // don't touch protection of bootloader area
   uint32_t final_protection = (protection & mask) | (WRPSector_save & ~mask);
   
-  sprintf(msg,"set:                   %04X\n", set);
-  print(msg);
-  sprintf(msg,"clear_protection:      %08lX\n", clear_protection);
-  print(msg);
-  sprintf(msg,"set_protection:        %08lX\n", set_protection);
-  print(msg);
-  sprintf(msg,"final_protection:      %08lX\n", final_protection);
-  print(msg);
-
-  
-  sprintf(msg,"reported protection:   %08lX\n", WRPSector_save);
-  print(msg);
+  //sprintf(msg,"final_protection:      %08lX\n", final_protection);
+  //print(msg);
+  //
+  //
+  //sprintf(msg,"reported protection:   %08lX\n", WRPSector_save);
+  //print(msg);
   
   status |= HAL_FLASH_OB_Lock();
   status |= HAL_FLASH_Lock();
   
-  status = HAL_FLASHEx_OBProgram_WRP(final_protection );  // set protection of affected sectors
+  status = _HAL_FLASHEx_OBProgram_WRP(final_protection );  // set protection of affected sectors
   
-  //OBStruct.OptionType = OPTIONBYTE_WRP;       // program write protection bits mode
-  //
-  //if (set) {
-  //  OBStruct.WRPState = OB_WRPSTATE_ENABLE;     // set write protection; 
-  //  OBStruct.WRPPage = set_protection;          // select affected sectors ( '1' do the operation on this sector pair)
-  //  
-  //  sprintf(msg,"WRPState:              %08lX\n", OBStruct.WRPState);
-  //  print(msg);
-  //  sprintf(msg,"WRPPage:               %08lX\n", OBStruct.WRPPage);
-  //  print(msg);
-  //
-  //  status = HAL_FLASHEx_OBProgram(&OBStruct);  // set protection of affected sectors
-  //  
-  //}
-  //else {
-  //  OBStruct.WRPState = OB_WRPSTATE_DISABLE;    // clear write protection 
-  //  OBStruct.WRPPage = clear_protection;        // select affected sectors ( '0' do the operation on this sector pair)
-  //  
-  //  sprintf(msg,"WRPState:              %08lX\n", OBStruct.WRPState);
-  //  print(msg);
-  //  sprintf(msg,"WRPPage:               %08lX\n", OBStruct.WRPPage);
-  //  print(msg);
-  //  
-  //  status = HAL_FLASHEx_OBProgram(&OBStruct);  // clear protection of affected sectors
-  //}
-  
-    //status |= HAL_FLASH_OB_Lock();
-    //status |= HAL_FLASH_Lock();
-    
-//  if(status == HAL_OK)
-//  {
-    HAL_FLASH_OB_Launch();      // sends system through reset which loads the OB bytes into the registers  
-//  }
 
-
+  HAL_FLASH_OB_Launch();      // sends system through reset which loads the OB bytes into the registers  
 
   return (status == HAL_OK) ? BL_OK : BL_OBP_ERROR;
 }
+
 
 void save_WRP_state(void) {
   FLASH_OBProgramInitTypeDef OBStruct = {0};
@@ -713,6 +711,8 @@ uint8_t Bootloader_CheckForApplication(void)
  */
 
 void Bootloader_JumpToApplication(void) {
+  
+  report_WP_ConfigProtection();
   
   Magic_Location = Magic_Application;  // flag that we should load application 
                                        // after the next reset

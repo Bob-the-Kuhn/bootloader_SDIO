@@ -36,7 +36,7 @@
                 "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/Middlewares/Third_Party/FatFs/src/drivers",
                 "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/Middlewares/Third_Party/FatFs/src/option",
                 "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/stm32-bootloader",
-                "C:/Users/bobku/.platformio/packages/framework-cmsis/CMSIS/Include",
+                "C:/Users/bobku/.platformio/packages/framework-cmsis@2.50501.200527/CMSIS/Include",
                 "C:/Users/bobku/.platformio/packages/framework-cmsis-stm32f1/Include",
                 ""
             ],
@@ -71,7 +71,7 @@
                     "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/Middlewares/Third_Party/FatFs/src/drivers",
                     "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/Middlewares/Third_Party/FatFs/src/option",
                     "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/stm32-bootloader",
-                    "C:/Users/bobku/.platformio/packages/framework-cmsis/CMSIS/Include",
+                    "C:/Users/bobku/.platformio/packages/framework-cmsis@2.50501.200527/CMSIS/Include",
                     "C:/Users/bobku/.platformio/packages/framework-cmsis-stm32f1/Include",
                     ""
                 ]
@@ -81,7 +81,6 @@
                 "STM32F103xE",
                 "STM32F1",
                 "F_CPU=72000000L",
-                "GENERIC_F103ZX",
                 ""
             ],
             "compilerPath": "C:/Users/bobku/.platformio/packages/toolchain-gccarmnoneeabi@1.70201.0/bin/arm-none-eabi-gcc.exe",

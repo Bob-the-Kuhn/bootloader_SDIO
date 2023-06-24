@@ -30,6 +30,10 @@
 #include <ctype.h>
 #include <stdint.h>
 
+//uint32_t __attribute__((section("no_init"))) init_1;  // debug
+//uint32_t __attribute__((section("no_init"))) init_2;
+
+
 void NVIC_System_Reset(void);
 
 /* USER CODE END Includes */
@@ -184,7 +188,6 @@ report_WP_ConfigProtection();
 
     /* Launch application */
     
- Error_Handler_Boot() ;  
     Bootloader_JumpToApplication();
   }
 
@@ -255,7 +258,22 @@ uint8_t Enter_Bootloader(void)
   /* Step 1: Init Bootloader and Flash */
 
   /* Check for flash write protection of application area*/
-  if(~Bootloader_GetProtectionStatus() & APP_sector_mask) { 
+  
+//  if(init_1 ) {
+//    Write_Prot_Old = WRITE_Prot_Old_Flag = Magic_Location = 0;
+//    init_2 = 1;
+//    init_1 = 0;
+//    Bootloader_ConfigProtection(0xFFFFFFFFUL, 0xFFFFFFFFUL, WP_SAVE);
+//  }
+//  
+//  if(init_2 ) {
+//    init_2 = 0;
+//    Write_Prot_Old = WRITE_Prot_Old_Flag = Magic_Location = 0;
+//    Bootloader_ConfigProtection(0x7FFFFFF7UL, 0xFFFFFFFFUL, WP_DONT_SAVE);
+//  }
+    
+  
+  if(~Bootloader_GetProtectionStatus() & WRITE_protection & APP_sector_mask) { 
     print("Application space in flash is write protected.\n");
     if (IGNORE_WRITE_PROTECTION) {
       //        print("Press button to disable flash write protection...\n");
@@ -273,7 +291,7 @@ uint8_t Enter_Bootloader(void)
       //        }
       //        LED_ALL_OFF();
       //        print("Button was not pressed, write protection is still active.\n");
-      if (!((WRITE_Prot_Old_Flag == WRITE_Prot_Old_Flag_Restored_flag) | (WRITE_Prot_Old_Flag == WRITE_Prot_Original_flag))) {   
+      if (!(WRITE_Prot_Old_Flag == WRITE_Prot_Old_Flag_Restored_flag))  {   
           // already restored original protection so don't initiate the process again
         print("Disabling write protection and generating system reset...\n");
         //print("  May require power cycle to recover.\n");
@@ -283,7 +301,7 @@ uint8_t Enter_Bootloader(void)
         Magic_Location = Magic_BootLoader;  // flag that we should load the bootloader
                                             // after the next reset
         save_WRP_state();  // save WRP state and set flag so can be restored later
-        if (Bootloader_ConfigProtection(WRITE_PROTECT_DEFAULT, APP_sector_mask, WRP_CLEAR) != BL_OK)   // sends system though reset - no more code executed unless there's an error 
+        if (Bootloader_ConfigProtection(WRITE_protection, APP_sector_mask, WP_SAVE) != BL_OK)   // sends system though reset - no more code executed unless there's an error 
           {
             print("Failed to clear write protection.\n");
             print("Exiting Bootloader.\n");
@@ -297,7 +315,7 @@ uint8_t Enter_Bootloader(void)
 
         Magic_Location = Magic_BootLoader;  // flag that we should load the bootloader
                                             // after the next reset
-        NVIC_System_Reset();  // send system through reset
+        //NVIC_System_Reset();  // send system through reset
       }
       else {
         return ERR_OK;  // already programmed FLASH & protection restored so it's time to launch the application
@@ -427,33 +445,33 @@ uint8_t Enter_Bootloader(void)
     char * pos = strrchr(new_filename, '.') + 1;  // find start of extension
     strncpy(pos, PGM_READ_WORD(&(FILE_EXT_CHANGE)), strlen(FILE_EXT_CHANGE) );  // copy FLASH into ram
 
-    //fr = f_unlink (new_filename); // if file already exists - delete it
-    //
-    //if ((fr == FR_OK) || (fr == FR_NO_FILE)) {
-    //
-    //  fr = f_rename(CONF_FILENAME, new_filename);  // rename file to .CUR
-    //  if (fr != FR_OK)
-    //  {
-    //    /* f_open failed */
-    //    print("File cannot be renamed.\n");
-    //    sprintf(msg, "FatFs error code: %u\n", fr);
-    //    print(msg);
-    //
-    //    // allow loading application even if can't rename
-    //    Magic_Location = Magic_Application;  // flag that we should load application
-    //                                         // after the next reset
-    //  }
-    //}
-    //else {
-    //      /* f_open failed */
-    //        print("removing .CUR failed.\n");
-    //        sprintf(msg, "FatFs error code: %u\n", fr);
-    //        print(msg);
-    //
-    //        // allow loading application even if can't rename
-    //        Magic_Location = Magic_Application;  // flag that we should load application
-    //                                             // after the next reset
-    //}
+    fr = f_unlink (new_filename); // if file already exists - delete it
+    
+    if ((fr == FR_OK) || (fr == FR_NO_FILE)) {
+    
+      fr = f_rename(CONF_FILENAME, new_filename);  // rename file to .CUR
+      if (fr != FR_OK)
+      {
+        /* f_open failed */
+        print("File cannot be renamed.\n");
+        sprintf(msg, "FatFs error code: %u\n", fr);
+        print(msg);
+    
+        // allow loading application even if can't rename
+        Magic_Location = Magic_Application;  // flag that we should load application
+                                             // after the next reset
+      }
+    }
+    else {
+          /* f_open failed */
+            print("removing .CUR failed.\n");
+            sprintf(msg, "FatFs error code: %u\n", fr);
+            print(msg);
+    
+            // allow loading application even if can't rename
+            Magic_Location = Magic_Application;  // flag that we should load application
+                                                 // after the next reset
+    }
         
   #endif
 
@@ -462,33 +480,31 @@ uint8_t Enter_Bootloader(void)
   print("SD ejected.\n");
 
   /* Enable flash write protection on application area */
-  #if(USE_WRITE_PROTECTION && !RESTORE_WRITE_PROTECTION)
+#if(USE_WRITE_PROTECTION && !RESTORE_WRITE_PROTECTION)
     print("Enabling flash write protection and generating system reset...\n");
-    WRITE_Prot_Old_Flag  = WRITE_Prot_Old_Flag_Restored_flag;  // flag that WRP state has bee set to final
-    if (Bootloader_ConfigProtection(WRITE_PROTECT_DEFAULT, APP_sector_mask, WRP_SET) != BL_OK)  // sends system though reset - no more code executed unless there's an error
+    if(Bootloader_ConfigProtection(BL_PROTECTION_WRP, APP_sector_mask, WP_DONT_SAVE) != BL_OK)   // sends system though reset - no more code executed unless there's an error
     {
       print("Failed to enable write protection.\n");
+
     }
-  #endif
+#endif
 
   /* Restore flash write protection */
-  #if(!USE_WRITE_PROTECTION && RESTORE_WRITE_PROTECTION && IGNORE_WRITE_PROTECTION)
-    print("step 1\n");
+#if(!USE_WRITE_PROTECTION && RESTORE_WRITE_PROTECTION && IGNORE_WRITE_PROTECTION)
     if (WRITE_Prot_Old_Flag == WRITE_Prot_Original_flag) {
       WRITE_Prot_Old_Flag = WRITE_Prot_Old_Flag_Restored_flag;  // indicate we've restored the protection
       print("Restoring flash write protection and generating system reset...\n");
       //print("  May require power cycle to recover.\n");
 
-      if (Bootloader_ConfigProtection(Write_Prot_Old, APP_sector_mask, WRP_SET) != BL_OK)  // sends system though reset - no more code executed unless there's an error
+      if (Bootloader_ConfigProtection(Write_Prot_Old, APP_sector_mask, WP_DONT_SAVE) != BL_OK)  // sends system though reset - no more code executed unless there's an error
       {
         print("Failed to restore write protection.\n");
       }
     }
-  #endif
-
+#endif
+  
   return ERR_OK;
 }
-
 
 /**
   * @brief  Debug over UART1 -> ST-LINK -> USB Virtual Com Port

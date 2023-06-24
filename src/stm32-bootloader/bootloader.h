@@ -155,6 +155,7 @@ void Bootloader_JumpToSysMem(void);
 
 uint32_t Bootloader_GetVersion(void);
 
+extern uint32_t WRITE_protection;
 extern uint32_t Magic_Location;
 #define Magic_BootLoader 0xB00720AD   //  semi random pattern to flag that next
                                       //  reset should load the bootloader code
@@ -173,7 +174,7 @@ void save_WRP_state(void);        // save current WRP state and set WRITE_Prot_O
 //   WRITE_Prot_Old_Flag_Restored_flag: original WRP state has been restored
 //   anything else: original WRP state has not been saved
 
-#define WRP_SET 1    // set write protection bits
-#define WRP_CLEAR 0  // clear write protection bits
+#define WP_DONT_SAVE 0
+#define WP_SAVE 1   
 
 #endif /* __BOOTLOADER_H */
