@@ -70,7 +70,7 @@ void GPIO_Init(void);
 //void kprint(const char* str);   // debug
 void k_delay(const uint32_t ms);
 
-void SPI_GPIOConfig(void);
+//void SPI_GPIOConfig(void);
 //void SPIConfig(void);
 //void SPI_Enable(void);
 void report_WP_ConfigProtection(void);
@@ -120,7 +120,7 @@ int main(void)
   LED_G1_ON();
   LED_G2_OFF(); 
   
-  SPI_GPIOConfig();
+ // SPI_GPIOConfig();
   //SPIConfig();
   //SPI_Enable();
   
@@ -196,28 +196,6 @@ void GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
-/**
-  * @brief SPI GPIO Initialization Function
-  * @param None
-  * @retval None
-*/
-void SPI_GPIOConfig(void){
-  
-   /*Configure GPIO pins : SCK */
-  gpio_wr(  IO(SD_SCK_GPIO_Port, SD_SCK_Pin), 0);
-  gpio_mode(IO(SD_SCK_GPIO_Port, SD_SCK_Pin), Output_Push_Pull, Speed_High);
-  
-  /*Configure GPIO pins : MOSI */
-  gpio_wr(  IO(SD_MOSI_GPIO_Port, SD_MOSI_Pin), 0);
-  gpio_mode(IO(SD_MOSI_GPIO_Port, SD_MOSI_Pin), Output_Push_Pull, Speed_High); 
-  
-  /*Configure GPIO pins : SDSS */
-  gpio_wr(  IO(SDSS_GPIO_Port, SDSS_Pin), 0);
-  gpio_mode(IO(SDSS_GPIO_Port, SDSS_Pin), Output_Push_Pull, Speed_Low); 
-  
-  /*Configure GPIO pins : MISO  */
-  gpio_mode(IO(SD_MISO_GPIO_Port, SD_MISO_Pin), Input_Floating, 0);
-}
 
 
 /* USER CODE BEGIN 4 */
@@ -587,7 +565,6 @@ uint8_t Enter_Bootloader(void)
                                            // after the next reset
     }
   #endif
-
  
   /* Eject SD card */
   SD_Eject();

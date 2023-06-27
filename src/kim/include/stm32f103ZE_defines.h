@@ -287,4 +287,4 @@
 #define R_ADC_DR        reg32(0x4001244cUL)       //  reg32(ADC1_BASE + 0x04c)
 #define R_ADC_CCR       reg32(0x40012704UL)       //  reg32(ADC1_BASE + 0x304)
 
-#endif /* _STM32F411X_ */
+#endif /* _STM32F103ZE_ */

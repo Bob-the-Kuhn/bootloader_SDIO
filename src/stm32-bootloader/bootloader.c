@@ -103,8 +103,8 @@ uint8_t Bootloader_Init(void)
     //sprintf(msg, "\nAPP_sector_mask %08lX\n", APP_sector_mask);
     //kprint(msg);
     // 
-    sprintf(msg, "\nBOOT_LOADER_END %08lX\n", BOOT_LOADER_END);
-    kprint(msg);
+    //sprintf(msg, "\nBOOT_LOADER_END %08lX\n", BOOT_LOADER_END);
+    //kprint(msg);
     //sprintf(msg, "Lowest possible APP_ADDRESS is %08lX\n", APP_first_addr);
     //kprint(msg);
  

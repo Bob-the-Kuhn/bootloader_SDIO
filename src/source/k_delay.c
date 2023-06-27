@@ -13,17 +13,17 @@
 extern uint32_t k_ticks(void);
 extern uint32_t k_ticks_freq(void);
 
-static inline uint32_t k_elapsed(uint32_t tprev)
+uint32_t k_elapsed(uint32_t tprev)
 {
 	return k_ticks() - tprev;
 }
 
-static inline uint32_t ms_to_ticks(uint32_t ms)
+uint32_t ms_to_ticks(uint32_t ms)
 {
 	return (k_ticks_freq() * ms) / 1000;
 }
 
-static inline uint32_t ticks_to_ms(uint32_t tk)
+ uint32_t ticks_to_ms(uint32_t tk)
 {
 	return (tk * 1000) / k_ticks_freq();
 }
