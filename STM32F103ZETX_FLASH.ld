@@ -126,6 +126,7 @@ SECTIONS
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
     . = ALIGN(4);
+                   
   } >FLASH
 
   /* Used by the startup to initialize data */
@@ -174,12 +175,12 @@ SECTIONS
   } >RAM
 
   /* Remove information from the compiler libraries */
- /* /DISCARD/ :       */
- /* {                 */
- /*   libc.a ( * )    */
- /*   libm.a ( * )    */
- /*   libgcc.a ( * )  */
- /* }                 */
+  /DISCARD/ :
+  {
+    libc.a ( * )
+    libm.a ( * )
+    libgcc.a ( * )
+  }
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
 }
