@@ -519,7 +519,7 @@ uint8_t Enter_Bootloader(void)
 #endif          
                    
   LED_G1_OFF();
-#if 0
+
   #if defined(FILE_EXT_CHANGE) && (_LFN_UNICODE == 0)   // rename file if using ANSI/OEM strings
     TCHAR new_filename[strlen(CONF_FILENAME) + 1];
     new_filename[strlen(CONF_FILENAME)] = '\0';  // terminate the string
@@ -557,7 +557,7 @@ uint8_t Enter_Bootloader(void)
                                            // after the next reset
     }
   #endif
-#endif
+
   /* Eject SD card */
   SD_Eject();
   print("SD ejected.\n");
@@ -641,3 +641,20 @@ void Error_Handler_boot(void)
     /* USER CODE END 6 */
   }
 #endif /* USE_FULL_ASSERT */
+
+/**
+ * @brief  Detects if SD card is correctly plugged in the memory slot or not.
+ * @param  None
+ * @retval Returns if SD is detected or not
+ */
+uint8_t BSP_SD_IsDetected(void)
+{
+  __IO uint8_t status = SD_PRESENT;
+
+  if (BSP_PlatformIsDetected() != SD_DETECT_ACTIVE)
+  {
+    status = SD_NOT_PRESENT;
+  }
+
+  return status;
+}

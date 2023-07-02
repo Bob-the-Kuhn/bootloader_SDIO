@@ -59,30 +59,21 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
-#define SD_SCK_PIN_Pin GPIO_PIN_5
-#define SD_SCK_PIN_GPIO_Port GPIOA
-#define SD_MISO_PIN_Pin GPIO_PIN_6
-#define SD_MISO_PIN_GPIO_Port GPIOA
-#define SD_MOSI_PIN_Pin GPIO_PIN_7
-#define SD_MOSI_PIN_GPIO_Port GPIOA 
 #define LD1_Pin GPIO_PIN_0
 #define LD1_GPIO_Port GPIOB
 #define LD3_Pin GPIO_PIN_14
 #define LD3_GPIO_Port GPIOB
-#define SD_SS_PIN_Pin GPIO_PIN_14
-#define SD_SS_PIN_GPIO_Port GPIOD
 #define STLINK_RX_Pin GPIO_PIN_8
 #define STLINK_RX_GPIO_Port GPIOD
 #define STLINK_TX_Pin GPIO_PIN_9
 #define STLINK_TX_GPIO_Port GPIOD
+#define Detect_SD_Pin GPIO_PIN_2
+#define Detect_SD_GPIO_Port GPIOG
 #define LD2_Pin GPIO_PIN_1
 #define LD2_GPIO_Port GPIOE
-//#define LD2_Pin GPIO_PIN_7   // F746 assignments 
-//#define LD2_GPIO_Port GPIOB  // F746 assignments
 
 /* USER CODE BEGIN Private defines */
 
-#define SD_SPI_HANDLE hspi3                           
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

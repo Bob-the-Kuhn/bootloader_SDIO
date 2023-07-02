@@ -141,8 +141,9 @@ void Error_Handler(void);
 
 #define SD_PRESENT               ((uint8_t)0x01)  /* also in bsp_driver_sd.h */
 #define SD_NOT_PRESENT           ((uint8_t)0x00)  /* also in bsp_driver_sd.h */
-#define SD_DETECT_PIN         Detect_SD_Pin
-#define SD_DETECT_GPIO_PORT   Detect_SD_GPIO_Port
+#define SD_DETECT_ACTIVE         ((uint8_t)0x01)  // flip this if SD detect is working backwards
+//#define SD_DETECT_PIN         Detect_SD_Pin
+//#define SD_DETECT_GPIO_PORT   Detect_SD_GPIO_Port
 
 #define SD_TIMEOUT 300   // how long to wait for a SD operation
 
