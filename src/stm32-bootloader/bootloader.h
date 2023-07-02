@@ -52,7 +52,7 @@
 #define CLEAR_RESET_FLAGS 1
 
 /** Start address of application space in flash */
-#define APP_ADDRESS (uint32_t)0x08008000
+#define APP_ADDRESS (uint32_t)0x08020000  // second sector in the H7 CPUs
 //#define APP_ADDRESS (uint32_t)0x08020000  // first available for EXFAT
 /** End address of application space (address of last byte) */
 #define END_ADDRESS (uint32_t)0x080FFFFB
@@ -67,8 +67,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 /* Include the appropriate header file */
-#if defined(STM32F4)
-  #include "stm32f4xx.h"
+#if defined(STM32H7)
+  #include "stm32h7xx.h"
 #else
   #error "Target MCU header file is not defined or unsupported."
 #endif
@@ -84,22 +84,40 @@ extern uint32_t APP_sector_mask;   // mask used to determine if any application 
 #define APP_OFFSET (APP_ADDRESS - FLASH_BASE)  // how far from start of FLASH the APP starts
 //#define FLASH_SIZE            ((uint32_t)0x100000)  // 1024K bytes
 //#define FLASH_SIZE            ((uint32_t)0x100000)  // 1024K bytes
-#define FLASH_SIZE            ((uint32_t)0x80000)  // 512K bytes
+//#define FLASH_SIZE            ((uint32_t)0x200000)  // 2048K bytes  H753 platform provides this
+//#define FLASH_SIZE            ((uint32_t)0x80000)  // 512K bytes
 //#define FLASH_SIZE            ((uint32_t)0x40000)  // 256K bytes
 //#define LAST_SECTOR           11  // 1024K bytes STM32F407 has FLASH sectors 0-11
-#define LAST_SECTOR            7  // 512K bytes STM32F407VE has FLASH sectors 0-7
-#define FLASH_SECTOR_NBPERBANK  (1)
-#define FLASH_SECTOR_SIZE       ((uint32_t)0x4000)  // 16K bytes
+//#define LAST_SECTOR            7  // 1024K bytes STM32F746ZG has FLASH sectors 0-7
+//#define LAST_SECTOR            7  // 512K bytes STM32F407VE has FLASH sectors 0-7
+//#define FLASH_SECTOR_NBPERBANK  (1)
+//#define FLASH_SECTOR_SIZE       ((uint32_t)0x4000)  // 16K bytes  
+//#define FLASH_SECTOR_SIZE       ((uint32_t)0x20000)  // 128K bytes   H753 platform provides this
 //#define FLASH_BASE            ((uint32_t)0x08000000) // FLASH(up to 1 MB) base address in the alias region
 //#define SRAM1_BASE            ((uint32_t)0x20000000) // SRAM1(112 KB) base address in the alias region
-#define SRAM1_SIZE_MAX        ((uint32_t)0x1BFFF)
-//#define SRAM2_BASE            ((uint32_t)0x2001C000) // SRAM2(16 KB) base address in the alias region  
-#define SRAM2_SIZE_MAX        ((uint32_t)0x03FFF)
-//#define PERIPH_BASE           ((uint32_t)0x40000000) // Peripheral base address in the alias region    
+#define LAST_SECTOR             (FLASH_SIZE/FLASH_SECTOR_SIZE - 1)  // H753 definition, sectors 0 ...
+#define NUM_BYTES_PER_PASS      32  // H753 has 256 bit internal FLASH bus
 
-#define FLASH_FLAG_ALL_ERRORS     (FLASH_FLAG_OPERR   | FLASH_FLAG_WRPERR | \
-                                   FLASH_FLAG_PGAERR  | FLASH_FLAG_PGSERR | \
-                                   FLASH_FLAG_PGPERR )
+
+//#define SRAM1_SIZE_MAX        ((uint32_t)0x1BFFF)
+//#define SRAM2_BASE            ((uint32_t)0x2001C000) // SRAM2(16 KB) base address in the alias region  
+//#define SRAM2_SIZE_MAX        ((uint32_t)0x03FFF)
+
+#ifndef SRAM1_BASE
+	#define SRAM1_BASE            ((uint32_t)0x20010000) // F746ZG SRAM1(240 KB) base address in the alias region
+#endif 
+#ifndef SRAM1_SIZE_MAX
+	#define SRAM1_SIZE_MAX       ((uint32_t)   0x3BFFF) // F746ZG
+#endif 
+#ifndef SRAM2_BASE
+  #define SRAM2_BASE            ((uint32_t)0x2004C000) // F746ZG SRAM2(16 KB) base address in the alias region  
+#endif 
+#ifndef SRAM2_SIZE_MAX
+	#define SRAM2_SIZE_MAX        ((uint32_t)   0x03FFF) // 
+#endif
+#ifndef PERIPH_BASE
+    #define PERIPH_BASE           ((uint32_t)0x40000000) // Peripheral base address in the alias region    
+#endif
 
 /* MCU RAM information (to check whether flash contains valid application) */
 #define RAM_BASE SRAM1_BASE     /*!< Start address of RAM */
@@ -136,7 +154,7 @@ uint8_t Bootloader_Init(void);
 uint8_t Bootloader_Erase(void);
 
 uint8_t Bootloader_FlashBegin(void);
-uint8_t Bootloader_FlashNext(uint64_t data);
+uint8_t Bootloader_FlashNext(uint8_t *data);
 uint8_t Bootloader_FlashEnd(void);
 
 uint32_t Bootloader_GetProtectionStatus(void);
