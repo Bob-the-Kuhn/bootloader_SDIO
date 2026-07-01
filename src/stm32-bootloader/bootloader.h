@@ -52,13 +52,13 @@
 #define CLEAR_RESET_FLAGS 1
 
 /** Start address of application space in flash */
-#define APP_ADDRESS (uint32_t)0x08008000
+#define APP_ADDRESS (uint32_t)0x08008000  // could be 0x08004000
 //#define APP_ADDRESS (uint32_t)0x08020000  // first available for EXFAT
 /** End address of application space (address of last byte) */
-#define END_ADDRESS (uint32_t)0x080FFFFB
+#define END_ADDRESS (uint32_t)0x0807FFFB
 
 /** Start address of application checksum in flash */
-#define CRC_ADDRESS (uint32_t)0x080FFFFC
+#define CRC_ADDRESS (uint32_t)0x0807FFFC
 
 /** Address of System Memory (ST Bootloader) */
 #define SYSMEM_ADDRESS (uint32_t)0x1FFF0000
@@ -87,7 +87,7 @@ extern uint32_t APP_sector_mask;   // mask used to determine if any application 
 #define FLASH_SIZE            ((uint32_t)0x80000)  // 512K bytes
 //#define FLASH_SIZE            ((uint32_t)0x40000)  // 256K bytes
 //#define LAST_SECTOR           11  // 1024K bytes STM32F407 has FLASH sectors 0-11
-#define LAST_SECTOR            7  // 512K bytes STM32F407VE has FLASH sectors 0-7
+#define LAST_SECTOR            7  // 512K bytes STM32F445ZE has FLASH sectors 0-7
 #define FLASH_SECTOR_NBPERBANK  (1)
 #define FLASH_SECTOR_SIZE       ((uint32_t)0x4000)  // 16K bytes
 //#define FLASH_BASE            ((uint32_t)0x08000000) // FLASH(up to 1 MB) base address in the alias region
@@ -136,7 +136,7 @@ uint8_t Bootloader_Init(void);
 uint8_t Bootloader_Erase(void);
 
 uint8_t Bootloader_FlashBegin(void);
-uint8_t Bootloader_FlashNext(uint64_t data);
+uint8_t Bootloader_FlashNext(uint32_t data);
 uint8_t Bootloader_FlashEnd(void);
 
 uint32_t Bootloader_GetProtectionStatus(void);

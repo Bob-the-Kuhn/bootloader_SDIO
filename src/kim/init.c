@@ -9,7 +9,7 @@
 #include <log.h>
 #include <gpio.h>
 #include <stm32f411x.h>
-#include <string.h>
+//#include <reg_defines.h>
 #include <string.h>
 
 #define STACK_TOP ((void*)(0x20004000))
@@ -20,6 +20,8 @@
 #define SYSTICKS_FREQ      1000
 
 #define kprint(...) /* FIXME dummy */
+
+void __disable_irq();
 
 static uint32_t ticks = 4294907296UL;
 
@@ -35,6 +37,8 @@ void init(void);
 void __attribute__ ((weak)) isr_reset(void)
 {
 	unsigned char *src, *dest;
+
+ __disable_irq();  // turn off IRQs until init NVIC
 
 	/* Load data to ram */
 	src = &_sdata_flash;
@@ -62,7 +66,7 @@ static uint32_t attr_used ipsr(void)
 void attr_weak isr_none(void)
 {
 #if 0
-	crt("Unhandled IPSR=%x ISPR=%x\n", (uint)ipsr(), (uint)rd32(R_NVIC_ISPR));
+	crt("Unhandled IPSR=%x ISPR=%x\n", (uint16_t)ipsr(), (uint16_t)rd32(R_NVIC_ISPR));
 	while(1);
 #endif
 }
@@ -208,29 +212,33 @@ inline void sleep()
 u32 k_ticks() attr_weak attr_alias("systicks");
 u32 k_ticks_freq(void) attr_alias("systicks_freq");
 
+
+
 void init_clock(void)
 {
-	/* Enable HSE (8MHz external oscillator) */
+	/* Enable HSE (12MHz external oscillator) */
 	or32(RCC_CR, BIT16);
 	while (!(rd32(RCC_CR) & BIT17));
 
-	/* PLLM=8 PLLN=336, PLLP=00 (2), PLLQ=7; f_PLL=168MHz, f_USB=48MHz */
-	and32(RCC_PLLCFGR, ~0x0f037fff);
-	or32(RCC_PLLCFGR, BIT22 | (7 << 24) | (336 << 6) | 8);
+	/* PLLM=8 PLLN=96 PLLP=00 (2), PLLQ=4; f_PLL=96MHz, f_USB=48MHz */
+	and32(RCC_PLLCFGR, ~0x7f437fff);
+	or32(RCC_PLLCFGR, BIT29 | (4 << 24) | BIT22 | (128 << 6) | 8);
 	or32(RCC_CR, BIT24);
 	while (!(rd32(RCC_CR) & BIT25));
 
 	/* Configure flash */
-	wr32(R_FLASH_ACR, BIT10 | BIT9 | BIT8 | 1);
+	wr32(R_FLASH_ACR, BIT10 | BIT9 | BIT8 | 3);
 
-	/* Use PLL as system clock, with AHB prescaler set to 4 */
-	wr32(RCC_CFGR, (0x9 << 4) | 0x2);
+	/* Use PLL as system clock, with AHB prescaler set to 1 */
+	wr32(RCC_CFGR, (5 << 13) | (5 << 10) |  0x2);
 	while (((rd32(RCC_CFGR) >> 2) & 0x3) != 0x2);
 
 	/* Enable clock on AHB and APB peripherals */
 	wr32(RCC_AHB1ENR, BIT7 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0); /* GPIO */
 	wr32(RCC_APB1ENR, BIT1 | BIT2 | BIT17); /* TIM3, TIM4 and USART2 */
-	wr32(RCC_APB2ENR, BIT0 | BIT4 | BIT8 | BIT18); /* TIM1/11, ADC1, USART1 */
+	wr32(RCC_APB2ENR, BIT0 | BIT4 | BIT8 | BIT11 | BIT18); /* TIM1/11, SDIO, ADC1, USART1 */
+  
+  wr32(RCC_CR, (rd32(RCC_CR) & ~((uint32_t)BIT0)));  // turn off HSI
 }
 
 void init_systick(void)
@@ -258,8 +266,8 @@ void init_uart(void)
 	gpio_func(IO(PORTA, 10), 7);
 	gpio_mode(IO(PORTA, 9), PULL_NO);
 	gpio_mode(IO(PORTA, 10), PULL_NO);
-	/* fPCLK=42MHz, br=115.2KBps, USARTDIV=22.8125, see table 80 pag. 519 */
-	wr32(R_USART1_BRR, (22 << 4) | 13);
+	/* fPCLK=24MHz, br=115.2KBps, USARTDIV=13.02, see table 80 pag. 519 */
+	wr32(R_USART1_BRR, (13 << 4) | 0 ); 
 	or32(R_USART1_CR1, BIT13 | BIT5 | BIT3 | BIT2);
 	//or32(R_NVIC_ISER(1), BIT6); /* USART2 is irq 38 */
   or32(R_NVIC_ISER(1), BIT5); /* USART1 is irq 37 */

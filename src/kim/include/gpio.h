@@ -4,6 +4,7 @@
 #define _GPIO_H_
 
 #include <stm32f411x.h>
+//#include <reg_defines.h>
 #include <basic.h>
 
 #define PORTA 0

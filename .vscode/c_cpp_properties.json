@@ -8,12 +8,12 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "C:/work/temp/bootloader_platformio/bootloader_SDIO/include",
-                "C:/work/temp/bootloader_platformio/bootloader_SDIO/src",
-                "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/stm32-bootloader",
-                "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/source",
-                "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/kim",
-                "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/kim/include",
+                "C:/Users/bobku/Documents/GitHub/bootloader_SDIO/src",
+                "C:/Users/bobku/Documents/GitHub/bootloader_SDIO/src/stm32-bootloader",
+                "C:/Users/bobku/Documents/GitHub/bootloader_SDIO/src/source",
+                "C:/Users/bobku/Documents/GitHub/bootloader_SDIO/src/kim",
+                "C:/Users/bobku/Documents/GitHub/bootloader_SDIO/src/kim/include",
+                "C:/Users/bobku/Documents/GitHub/bootloader_SDIO/include",
                 "C:/Users/bobku/.platformio/packages/framework-stm32cubef4/Drivers/CMSIS/Include",
                 "C:/Users/bobku/.platformio/packages/framework-stm32cubef4/Drivers/CMSIS/Device/ST/STM32F4xx/Include",
                 "C:/Users/bobku/.platformio/packages/framework-stm32cubef4/Drivers/STM32F4xx_HAL_Driver/Inc",
@@ -93,12 +93,12 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "C:/work/temp/bootloader_platformio/bootloader_SDIO/include",
-                    "C:/work/temp/bootloader_platformio/bootloader_SDIO/src",
-                    "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/stm32-bootloader",
-                    "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/source",
-                    "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/kim",
-                    "C:/work/temp/bootloader_platformio/bootloader_SDIO/src/kim/include",
+                    "C:/Users/bobku/Documents/GitHub/bootloader_SDIO/src",
+                    "C:/Users/bobku/Documents/GitHub/bootloader_SDIO/src/stm32-bootloader",
+                    "C:/Users/bobku/Documents/GitHub/bootloader_SDIO/src/source",
+                    "C:/Users/bobku/Documents/GitHub/bootloader_SDIO/src/kim",
+                    "C:/Users/bobku/Documents/GitHub/bootloader_SDIO/src/kim/include",
+                    "C:/Users/bobku/Documents/GitHub/bootloader_SDIO/include",
                     "C:/Users/bobku/.platformio/packages/framework-stm32cubef4/Drivers/CMSIS/Include",
                     "C:/Users/bobku/.platformio/packages/framework-stm32cubef4/Drivers/CMSIS/Device/ST/STM32F4xx/Include",
                     "C:/Users/bobku/.platformio/packages/framework-stm32cubef4/Drivers/STM32F4xx_HAL_Driver/Inc",
@@ -177,12 +177,11 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=60106",
+                "PLATFORMIO=60119",
                 "STM32F4",
-                "STM32F407xx",
-                "STM32F40_41xxx",
+                "STM32F446xx",
                 "USE_HAL_DRIVER",
-                "F_CPU=168000000L",
+                "F_CPU=180000000L",
                 ""
             ],
             "compilerPath": "C:/Users/bobku/.platformio/packages/toolchain-gccarmnoneeabi@1.70201.0/bin/arm-none-eabi-gcc.exe",

@@ -100,7 +100,7 @@ static int send_cmd(uint16_t idx, uint32_t arg, int resp_type, uint32_t *buf)
 		else {
 			/* check if timeout */
 			if (s & BIT3) {
-				err("%s timeout idx=%d arg=%08x\n", __func__, idx, (uint)arg);
+				err("%s timeout idx=%d arg=%08x\n", __func__, idx, (uint16_t)arg);
 				return 0;
 			}
 
@@ -108,7 +108,7 @@ static int send_cmd(uint16_t idx, uint32_t arg, int resp_type, uint32_t *buf)
 			if (s & BIT1) {
 				if (idx == 1 || idx == 12 || idx == 41)
 					break;
-				err("%s crcfail idx=%d arg=%08x\n", __func__, idx, (uint)arg);
+				err("%s crcfail idx=%d arg=%08x\n", __func__, idx, (uint16_t)arg);
 				return 0;
 			}
 
@@ -344,7 +344,7 @@ DRESULT disk_read(uint8_t pdrv, uint8_t* buf, uint32_t sector, UINT count)
 		sta = rd32(R_SDIO_STA);
 
 		if (sta & (BIT3 | BIT5 | BIT9)) {
-			err("%s SDIO_STA: %08x\n", __func__, (uint)sta);
+			err("%s SDIO_STA: %08x\n", __func__, (uint16_t)sta);
 			break;
 		}
 
@@ -422,7 +422,7 @@ DRESULT disk_write(uint8_t pdrv, const uint8_t* buf, uint32_t sector, UINT count
 		sta = rd32(R_SDIO_STA);
 
 		if (sta & (BIT3 | BIT9)) {
-			err("%s SDIO_STA: %08x\n", __func__, (uint)sta);
+			err("%s SDIO_STA: %08x\n", __func__, (uint16_t)sta);
 			break;
 		}
 

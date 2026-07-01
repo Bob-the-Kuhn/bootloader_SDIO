@@ -11,8 +11,8 @@
 #define R_SCB_CPUID			reg32(0xE000ED00)
 #define R_SCB_ICSR			reg32(0xE000ED04)
 #define R_SCB_AIRCR			reg32(0xE000ED0C)
-#define R_SCB_SCR			reg32(0xE000ED10)
-#define R_SCB_CCR			reg32(0xE000ED14)
+#define R_SCB_SCR			  reg32(0xE000ED10)
+#define R_SCB_CCR		  	reg32(0xE000ED14)
 #define R_SCB_SHPR2			reg32(0xE000ED1C)
 #define R_SCB_SHPR3			reg32(0xE000ED20)
 
@@ -27,10 +27,10 @@
 #define R_NVIC_ICER(x)		reg32(0xE000E180 + 4 * (x))
 #define R_NVIC_ISPR(x)		reg32(0xE000E200 + 4 * (x))
 #define R_NVIC_ICPR(x)		reg32(0xE000E280 + 4 * (x))
-#define R_NVIC_IPR(x)		reg32(0xE000E400 + 4 * (x))
+#define R_NVIC_IPR(x)		  reg32(0xE000E400 + 4 * (x))
 
 /* Flash registers */
-#define R_FLASH_ACR			reg32(0x40023c00)
+#define R_FLASH_ACR			  reg32(0x40023c00)
 
 /* disable interrupts */
 static inline void cpsid(void)

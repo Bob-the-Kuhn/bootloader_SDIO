@@ -20,6 +20,7 @@
 #include "main.h"
 #include "bootloader.h"                       
 #include "ff.h"
+#include "ff.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -85,7 +86,7 @@ void k_delay(const uint32_t ms);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  
+   
   /* USER CODE END 1 */
   
   /* MCU Configuration--------------------------------------------------------*/
@@ -146,18 +147,31 @@ void GPIO_Init(void)
  
   
    /*Configure GPIO pins : LED_D2_Pin */
-  gpio_wr(  IO(PORTA, 6), 0);
-  gpio_func(IO(PORTA, 6), 0);
-  gpio_dir( IO(PORTA, 6), GPIO_OUTPUT);
-  gpio_mode(IO(PORTA, 6), PULL_NO);
+  gpio_wr(  IO(PORTD, 13), 0);
+  gpio_func(IO(PORTD, 13), 0);
+  gpio_dir( IO(PORTD, 13), GPIO_OUTPUT);
+  gpio_mode(IO(PORTD, 13), PULL_NO);
   
   /*Configure GPIO pins : LED_D3_Pin */
-  gpio_wr(  IO(PORTA, 7), 0);
-  gpio_func(IO(PORTA, 7), 0);
-  gpio_dir( IO(PORTA, 7), GPIO_OUTPUT);
-  gpio_mode(IO(PORTA, 7), PULL_NO);
+  gpio_wr(  IO(PORTD, 12), 0);
+  gpio_func(IO(PORTD, 12), 0);
+  gpio_dir( IO(PORTD, 12), GPIO_OUTPUT);
+  gpio_mode(IO(PORTD, 12), PULL_NO);
+  
+  /*Configure GPIO pins : LED_G1_Pin */
+  gpio_wr(  IO(PORTD, 14), 0);
+  gpio_func(IO(PORTD, 14), 0);
+  gpio_dir( IO(PORTD, 14), GPIO_OUTPUT);
+  gpio_mode(IO(PORTD, 14), PULL_NO);
+  
+  /*Configure GPIO pins : LED_G2_Pin */
+  gpio_wr(  IO(PORTD, 15), 0);
+  gpio_func(IO(PORTD, 15), 0);
+  gpio_dir( IO(PORTD, 15), GPIO_OUTPUT);
+  gpio_mode(IO(PORTD, 15), PULL_NO);
   
 
+  /*Configure GPIO pins : B5 */ 
   /*Configure GPIO pins : B5 */
   gpio_wr(  IO(PORTB, 5), 0);
   gpio_func(IO(PORTB, 5), 0);
@@ -494,8 +508,9 @@ uint8_t Enter_Bootloader(void)
     
     
     if ((fr == FR_OK) || (fr == FR_NO_FILE)) {
-      fr = f_rename(CONF_FILENAME, new_filename);  // rename file to .CUR
-                                                                       if (fr != FR_OK)  
+    fr = f_rename(CONF_FILENAME, new_filename);  // rename file to .CUR
+
+      if (fr != FR_OK)  
       {
         /* f_open failed */
         print("File cannot be renamed.\n");

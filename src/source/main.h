@@ -63,16 +63,20 @@ void Error_Handler(void);
 // BTT SKR PRO has only one LED at PA7
 // The 407 black board has two at PA6 and PA7
 
+// The 446 Octopus has one LED at A13 BUT that's also a SWD pin
+// so you can't reliably debug the board if A13 is used to
+// drive a LED.  We'll use the FAN4 and FAN5 connectors instead.
+
 //#define WORK_LED_Pin GPIO_PIN_2
 //#define WORK_LED_GPIO_Port GPIOB
 
 /* LD2 */
-#define LED_G1_Port GPIOA
-#define LED_G1_Pin  GPIO_PIN_6
-
-/* LD3 */
-#define LED_G2_Port GPIOA
-#define LED_G2_Pin  GPIO_PIN_7
+#define LED_G2_Port GPIOD
+#define LED_G2_Pin  GPIO_PIN_15
+            
+/* LG1 */   
+#define LED_G1_Port GPIOD
+#define LED_G1_Pin  GPIO_PIN_14
 
 /* Enumerations --------------------------------------------------------------*/
 /* Error codes */
@@ -100,20 +104,20 @@ enum eApplicationErrorCodes
 #define LED_ALL_ON() \
     do               \
     {                \
-        LED_G1_ON(); \
         LED_G2_ON(); \
+        LED_G1_ON(); \
     } while(0)
 #define LED_ALL_OFF() \
     do                \
     {                 \
-        LED_G1_OFF(); \
         LED_G2_OFF(); \
+        LED_G1_OFF(); \
     } while(0)
 #define LED_ALL_TG() \
     do               \
     {                \
-        LED_G1_TG(); \
         LED_G2_TG(); \
+        LED_G1_TG(); \
     } while(0)
 
 /* USER CODE END EM */
@@ -126,12 +130,23 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define LED_D2_Pin GPIO_PIN_6
-#define LED_D2_GPIO_Port GPIOA
-#define LED_D3_Pin GPIO_PIN_7
-#define LED_D3_GPIO_Port GPIOA
-#define Detect_SDIO_Pin GPIO_PIN_9
-#define Detect_SDIO_GPIO_Port GPIOD
+#define LED_D2_Pin GPIO_PIN_13
+#define LED_D2_GPIO_Port GPIOD
+#define LED_D3_Pin GPIO_PIN_12
+#define LED_D3_GPIO_Port GPIOD
+#define LED_D2_ON()  HAL_GPIO_WritePin(LED_D2_Port, LED_D2_Pin, GPIO_PIN_RESET)
+#define LED_D2_OFF() HAL_GPIO_WritePin(LED_D2_Port, LED_D2_Pin, GPIO_PIN_SET)
+#define LED_D2_TG()  HAL_GPIO_TogglePin(LED_D2_Port, LED_D2_Pin)
+#define LED_D3_ON()  HAL_GPIO_WritePin(LED_D3_Port, LED_D3_Pin, GPIO_PIN_RESET)
+#define LED_D3_OFF() HAL_GPIO_WritePin(LED_D3_Port, LED_D3_Pin, GPIO_PIN_SET)
+#define LED_D3_TG()  HAL_GPIO_TogglePin(LED_D3_Port, LED_D3_Pin)
+
+
+
+
+#define Detect_SDIO_Pin GPIO_PIN_12
+#define Detect_SDIO_GPIO_Port GPIOC
+
 
 /* USER CODE BEGIN Private defines */
 

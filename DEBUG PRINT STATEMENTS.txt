@@ -1,0 +1,106 @@
+Below are routines used to verify the clocks were configured properly.
+
+The HAL_xxxx routines were advertised as reporting how the clocks were actually working.  They 
+never gave believable results.  Some of that is because thee value for HSE_VALUE is set by the
+HAL_xxxx level files multiple times.  I tried "#ifdef ..." sequence to force the correct value
+but the HAL_xxxx routines were always strange.  Efforts to print the run time value of HSE_VALUE
+sometimes gave 16MHz and sometimes 25MHz.  The only way I got a 12MHz printout is if the print 
+statement came within the same file as the declaration and the none of the HAL_xxxx routines were
+called between the two.
+
+In the end I measured the baud rate on USART1 to determine if some of the clocks were setup
+properly.
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+#ifdef HSE_VALUE
+  #undef HSE_VALUE
+#endif
+#define HSE_VALUE 12000000
+
+void print_binary_u32(uint32_t num) {
+    // Loop through all 32 bits, starting from the Most Significant Bit (MSB)
+    for (int i = 31; i >= 0; i--) {
+        // Shift right by i, then isolate the lowest bit using bitwise AND
+        uint32_t bit = (num >> i) & 1;
+        sprintf(msg,"%1u", bit);
+        print(msg);
+
+        // Add a visual space after every 4 bits, except after the last bit
+        if (i % 4 == 0 && i != 0) {
+            print(" ");
+        }
+    }
+    print("\n");
+}
+
+
+
+
+
+    sprintf(msg, "RCC_CR:\r\n    %08lX\r\n    ", rd32(RCC_CR));
+    print(msg);
+    print_binary_u32(rd32(RCC_CR));
+    
+    sprintf(msg, "RCC_PLLCFGR:\r\n    %08lX\r\n    ", rd32(RCC_PLLCFGR));
+    print(msg);
+    print_binary_u32(rd32(RCC_PLLCFGR));
+    
+    sprintf(msg, "R_FLASH_ACR:\r\n    %08lX\r\n    ", rd32(R_FLASH_ACR));
+    print(msg);
+    print_binary_u32(rd32(R_FLASH_ACR));
+    
+    sprintf(msg, "RCC_CFGR:\r\n    %08lX\r\n    ", rd32(RCC_CFGR));
+    print(msg);
+    print_binary_u32(rd32(RCC_CFGR));
+    
+    sprintf(msg, "RCC_AHB1ENR:\r\n    %08lX\r\n    ", rd32(RCC_AHB1ENR));
+    print(msg);
+    print_binary_u32(rd32(RCC_AHB1ENR));
+    
+    sprintf(msg, "RCC_APB1ENR:\r\n    %08lX\r\n    ", rd32(RCC_APB1ENR));
+    print(msg);
+    print_binary_u32(rd32(RCC_APB1ENR));
+    
+    sprintf(msg, "RCC_APB2ENR:\r\n    %08lX\r\n    ", rd32(RCC_APB2ENR));
+    print(msg);
+    print_binary_u32(rd32(RCC_APB2ENR));
+
+    sprintf(msg, "R_USART1_BRR:\r\n    %08lX\r\n    ", rd32(R_USART1_BRR));
+    print(msg);
+    print_binary_u32(rd32(R_USART1_BRR));
+
+    
+    printf("\r\n--- STM32F4 Clock Frequencies ---\r\n");
+    char ascii_str[12]; // Enough space for a 32-bit int (-2147483648 to 2147483647) plus null terminator
+
+    uint32_t run_time_HSE_VALUE = HSE_VALUE;
+    snprintf(ascii_str, sizeof(ascii_str), "%ld",  run_time_HSE_VALUE);
+    //sprintf("SYSCLK: %lu Hz\r\n", HAL_RCC_GetSysClockFreq());
+    sprintf(msg, "HSE_VALUE:\r\n   %8s\r\n  ", &ascii_str[0]);
+    print(msg);
+    
+
+
+    // Convert int to ASCII string safely
+    snprintf(ascii_str, sizeof(ascii_str), "%ld", HAL_RCC_GetSysClockFreq());
+    //sprintf("SYSCLK: %lu Hz\r\n", HAL_RCC_GetSysClockFreq());
+    sprintf(msg, "SYSCLK: %12s Hz\r\n", &ascii_str[0]);
+    print(msg);
+    snprintf(ascii_str, sizeof(ascii_str), "%ld", HAL_RCC_GetHCLKFreq());
+   //sprintf("HCLK (AHB): %lu Hz\r\n", HAL_RCC_GetHCLKFreq());
+    sprintf(msg, "HCLK (AHB): %12s Hz\r\n", &ascii_str[0]);
+    print(msg);
+    snprintf(ascii_str, sizeof(ascii_str), "%ld", HAL_RCC_GetPCLK1Freq());
+    //sprintf("PCLK1 (APB1): %lu Hz\r\n", HAL_RCC_GetPCLK1Freq());
+    sprintf(msg, "PCLK1 (APB1): %12s Hz\r\n", &ascii_str[0]);
+    print(msg);
+    snprintf(ascii_str, sizeof(ascii_str), "%ld", HAL_RCC_GetPCLK2Freq());
+    //sprintf("PCLK2 (APB2): %lu Hz\r\n", HAL_RCC_GetPCLK2Freq());
+    sprintf(msg, "PCLK2 (APB2): %12s Hz\r\n", &ascii_str[0]);
+    print(msg);
+    snprintf(ascii_str, sizeof(ascii_str), "%ld", HAL_RCC_GetPCLK2Freq());
+    //sprintf("PCLK2 (APB2)USART_BRR, "PCLK2 (APB2): %12s Hz\r\n", &ascii_str[0]);
+    print(msg);
