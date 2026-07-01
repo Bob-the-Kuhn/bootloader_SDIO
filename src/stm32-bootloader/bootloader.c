@@ -39,8 +39,9 @@ typedef void (*pFunction)(void); /*!< Function pointer definition */
 /** Private variable for tracking flashing progress */
 static uint32_t flash_ptr = APP_ADDRESS;
 
-uint32_t APP_first_sector;  // first FLASH sector an application can be loaded into
-uint32_t APP_first_addr;    // beginning address of first FLASH sector an application can be loaded into
+uint32_t APP_first_sector;  // first FLASH sector an application is actually loaded into
+uint32_t APP_lowest_sector; // first FLASH sector an application can be loaded into
+uint32_t APP_lowest_addr;   // beginning address of first FLASH sector an application can be loaded into
 uint32_t APP_sector_mask;   // mask used to determine if any application sectors are write protected
                             // F407 mask is actually the first 12 bits in the upper word
 uint32_t WRITE_protection = 0xFFFFFFFF;  // default to removing write protection from all pages 
@@ -55,11 +56,19 @@ uint32_t MagicBootLoader = Magic_BootLoader;
 uint32_t MagicApplication = Magic_Application;
 uint32_t APP_ADDR = APP_ADDRESS;
 
-char msg[64];             
+char msg[128];             
 
 void NVIC_System_Reset(void);
 
 
+
+#define FLASH_SECTOR7  7 
+#define FLASH_SECTOR6  6
+#define FLASH_SECTOR5  5
+#define FLASH_SECTOR4  4
+#define FLASH_SECTOR3  3
+#define FLASH_SECTOR2  2
+#define FLASH_SECTOR1  1
 
 /**
  * @brief  This function initializes bootloader and flash.
@@ -74,20 +83,15 @@ uint8_t Bootloader_Init(void)
     uint32_t fini_array_end = (uint32_t)__fini_array_end;
     #define BOOT_LOADER_END (fini_array_end + 500)  // 500 is based on observed loads
 
-   
-    
-    sprintf(msg, "Lowest possible APP_ADDRESS is %08lX\n", APP_first_addr);
-    print(msg);
-
-
 
     /* Clear flash flags */
     HAL_FLASH_Unlock();
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);
     HAL_FLASH_Lock();
 
+    APP_lowest_sector = 0;
     APP_first_sector = 0;
-    APP_first_addr = 0;
+    APP_lowest_addr = 0;
    
     // STM32F446 has different length FLASH sectors.
     //   Sector 0 to Sector 3 being 16 KB each
@@ -95,35 +99,45 @@ uint8_t Bootloader_Init(void)
     //   Sector 5–7 are 128 KB each
     
 
-    if (BOOT_LOADER_END <= 0x60000 + FLASH_BASE) {APP_first_sector = FLASH_SECTOR_7;   APP_first_addr = 0x60000 + FLASH_BASE;}
-    if (BOOT_LOADER_END <= 0x40000 + FLASH_BASE) {APP_first_sector = FLASH_SECTOR_6;   APP_first_addr = 0x40000 + FLASH_BASE;}
-    if (BOOT_LOADER_END <= 0x20000 + FLASH_BASE) {APP_first_sector = FLASH_SECTOR_5;   APP_first_addr = 0x20000 + FLASH_BASE;}
-    if (BOOT_LOADER_END <= 0x10000 + FLASH_BASE) {APP_first_sector = FLASH_SECTOR_4;   APP_first_addr = 0x10000 + FLASH_BASE;}
-    if (BOOT_LOADER_END <= 0x0C000 + FLASH_BASE) {APP_first_sector = FLASH_SECTOR_3;   APP_first_addr = 0x0C000 + FLASH_BASE;}
-    if (BOOT_LOADER_END <= 0x08000 + FLASH_BASE) {APP_first_sector = FLASH_SECTOR_2;   APP_first_addr = 0x08000 + FLASH_BASE;}
-    if (BOOT_LOADER_END <= 0x04000 + FLASH_BASE) {APP_first_sector = FLASH_SECTOR_1;   APP_first_addr = 0x04000 + FLASH_BASE;}
-   
-   
+    if (BOOT_LOADER_END <= 0x60000 + FLASH_BASE) {APP_lowest_sector = 7;   APP_lowest_addr = 0x60000 + FLASH_BASE;
+      if (APP_lowest_addr == APP_ADDRESS) {APP_first_sector = 7;} }
+      
+    if (BOOT_LOADER_END <= 0x40000 + FLASH_BASE) {APP_lowest_sector = 6;   APP_lowest_addr = 0x40000 + FLASH_BASE;
+      if (APP_lowest_addr == APP_ADDRESS) {APP_first_sector = 6;} }
 
-    
-    
-    
+     if (BOOT_LOADER_END <= 0x20000 + FLASH_BASE) {APP_lowest_sector = 5;   APP_lowest_addr = 0x20000 + FLASH_BASE;
+      if (APP_lowest_addr == APP_ADDRESS) {APP_first_sector = 5;} }
+
+    if (BOOT_LOADER_END <= 0x10000 + FLASH_BASE) {APP_lowest_sector = 4;   APP_lowest_addr = 0x10000 + FLASH_BASE;
+      if (APP_lowest_addr == APP_ADDRESS) {APP_first_sector = 4;} }
+
+    if (BOOT_LOADER_END <= 0x0C000 + FLASH_BASE) {APP_lowest_sector = 3;   APP_lowest_addr = 0x0C000 + FLASH_BASE;
+      if (APP_lowest_addr == APP_ADDRESS) {APP_first_sector = 3;} }
+
+    if (BOOT_LOADER_END <= 0x08000 + FLASH_BASE) {APP_lowest_sector = 2;   APP_lowest_addr = 0x08000 + FLASH_BASE;
+      if (APP_lowest_addr == APP_ADDRESS) {APP_first_sector = 2;} }
+
+    if (BOOT_LOADER_END <= 0x04000 + FLASH_BASE) {APP_lowest_sector = 1;   APP_lowest_addr = 0x04000 + FLASH_BASE;
+      if (APP_lowest_addr == APP_ADDRESS) {APP_first_sector = 1;} }
+
+
     sprintf(msg, "\nBOOT_LOADER_END %08lX\n", BOOT_LOADER_END);
     print(msg);
-    sprintf(msg, "Lowest possible APP_ADDRESS is %08lX\n", APP_first_addr);
+    sprintf(msg, "Lowest possible APP_ADDRESS is %08lX\n", APP_lowest_addr);
     print(msg);
+    
     /* check APP_ADDRESS */
     if (APP_ADDRESS & 0x1ff) {
       print("ERROR - application address not on 512 byte boundary\n");
       Error_Handler();
     }
-    if (APP_ADDRESS < APP_first_addr) {
+    if (APP_ADDRESS < APP_lowest_addr) {
       print("ERROR - application address within same sector as boot loader\n");
       Error_Handler();
     } 
     
     if (APP_OFFSET == 0) return BL_ERASE_ERROR;   // start of boot program
-    if (APP_first_sector == 0) return BL_ERASE_ERROR;   // application is within same sector as bootloader
+    if (APP_lowest_sector == 0) return BL_ERASE_ERROR;   // application is within same sector as bootloader
 
 
     APP_sector_mask = 0;
@@ -131,8 +145,11 @@ uint8_t Bootloader_Init(void)
       APP_sector_mask |= 1 << i;
     }
     
-    //sprintf(msg, "APP_sector_mask: %08lX\n", APP_sector_mask);
-    //print(msg);
+    sprintf(msg, "APP_sector_mask: %08lX\n", APP_sector_mask);
+    print(msg);
+    
+    sprintf(msg, "APP_first_sector: %08lX\n", APP_first_sector);
+    print(msg);
     
     return BL_OK;
 }
@@ -200,18 +217,17 @@ uint8_t Bootloader_FlashBegin(void)
 }
 
 /**
- * @brief  Program 64bit data into flash: this function writes an 8byte (64bit)
+ * @brief  Program 32bit data into flash: this function writes an 8byte (64bit)
  *         data chunk into the flash and increments the data pointer.
  * @see    README for futher information
- * @param  data: 64bit data chunk to be written into flash
+ * @param  data: 32 bit data chunk to be written into flash
  * @return Bootloader error code ::eBootloaderErrorCodes
  * @retval BL_OK: upon success
  * @retval BL_WRITE_ERROR: upon failure
  */
 uint8_t Bootloader_FlashNext(uint32_t data)
 {
-    char msg[64]; //debug
-    uint32_t read_data;
+   uint32_t read_data;
    // HAL_StatusTypeDef status = HAL_OK; //debug
     if(!(flash_ptr <= (FLASH_BASE + FLASH_SIZE - 8)) ||
        (flash_ptr < APP_ADDRESS))

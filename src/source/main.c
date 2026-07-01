@@ -278,7 +278,7 @@ uint8_t Enter_Bootloader(void)
   UINT num;
   //    uint8_t i;
   uint8_t status;
-  uint64_t data;
+  uint32_t data;
   uint32_t cntr;
   //uint32_t addr;
   char SDPath[4] = {0x00};   /* SD logical drive path */
@@ -398,7 +398,7 @@ uint8_t Enter_Bootloader(void)
   Bootloader_FlashBegin();
   do
   {
-    data = 0xFFFFFFFFFFFFFFFF;
+    data = 0xFFFFFFFF;
     //      fr   = f_read(&SDFile, &data, 8, &num);
     fr   = f_read(&SDFile, &data, 4, &num);
     if(num)
